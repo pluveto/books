@@ -11,6 +11,7 @@ import { SeriesReader } from "./obsidian/series-reader.ts"
 import { Vault } from "./obsidian/vault.ts"
 import { PdfBook } from "./pdf/pdf-book.ts"
 import { MarkdownParser } from "./render/parser.ts"
+import { PdfShelf } from "./site/pdf-shelf.ts"
 import { OUTPUT } from "./site/protocol.ts"
 import { Routes } from "./site/routes.ts"
 import { Site } from "./site/site.ts"
@@ -73,7 +74,7 @@ export class PublishCommand {
       return EXIT.ok
     } catch (error) {
       if (!(error instanceof PublishError)) throw error
-      console.error(`error: ${error.describe()}`)
+      console.error(`error: ${error.describe(invocation.vaultLabel)}`)
       return error instanceof MissingToolError ? EXIT.tool : EXIT.content
     }
   }
@@ -110,6 +111,12 @@ export class PublishCommand {
       language,
       search: values.search,
     })
+  }
+
+  /** The vault folder as the user typed it, for error locations. */
+  private get vaultLabel(): string {
+    const relative = path.relative(process.cwd(), this.options.vault)
+    return relative && !relative.startsWith("..") ? relative.split(path.sep).join("/") : this.options.vault
   }
 
   private async execute(): Promise<void> {
@@ -179,7 +186,9 @@ export class PublishCommand {
           await this.build(local, true)
           server.reload()
         } catch (error) {
-          console.error(`error: ${error instanceof PublishError ? error.describe() : String(error)}`)
+          console.error(
+            `error: ${error instanceof PublishError ? error.describe(this.vaultLabel) : String(error)}`,
+          )
         }
       })
     }
@@ -204,11 +213,19 @@ export class PublishCommand {
     if (!editions.length)
       throw new PublishError(`No edition matches --book ${book ?? "*"} --lang ${language ?? "*"}.`)
     const routes = new Routes(this.options.siteUrl ?? series.settings.siteUrl)
+    const folder = path.join(this.options.out, OUTPUT.pdf)
+    const shelf = PdfShelf.open(folder)
     for (const edition of editions) {
-      const output = path.join(this.options.out, OUTPUT.pdf, routes.pdfName(edition))
-      await new PdfBook(vault, series, edition, routes).write(output)
-      console.log(`Wrote ${path.relative(process.cwd(), output)}`)
+      const name = routes.pdfName(edition)
+      await new PdfBook(vault, series, edition, routes).write(path.join(folder, name))
+      shelf.record(name, name, PdfShelf.fingerprint(vault, edition))
+      console.log(`Wrote ${path.relative(process.cwd(), path.join(folder, name))}`)
     }
+    const existing = new Set(
+      series.books.flatMap((item) => item.editions).map((edition) => routes.pdfName(edition)),
+    )
+    shelf.prune(book || language ? existing : new Set(editions.map((edition) => routes.pdfName(edition))))
+    shelf.save()
   }
 
   private preamble(): void {

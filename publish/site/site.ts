@@ -7,6 +7,7 @@ import type { Vault } from "../obsidian/vault.ts"
 import { ChapterRenderer } from "../render/renderer.ts"
 import { SiteAssets } from "./assets.ts"
 import { renderDocument } from "./components/document.tsx"
+import { FolderSwap } from "./folder-swap.ts"
 import { SourceHistory } from "./history.ts"
 import { MediaLibrary } from "./media.ts"
 import { SiteContext, type Page } from "./page.ts"
@@ -14,6 +15,7 @@ import { CatalogPage } from "./pages/catalog.tsx"
 import { ChapterPage } from "./pages/chapter.tsx"
 import { CoverPage } from "./pages/cover.tsx"
 import { GatePage, NotFoundPage } from "./pages/entry.tsx"
+import { PdfShelf } from "./pdf-shelf.ts"
 import { OUTPUT } from "./protocol.ts"
 import { Routes } from "./routes.ts"
 import { writeSearchIndex, type IndexedPage } from "./search.ts"
@@ -35,8 +37,8 @@ export interface BuildReport {
 }
 
 /**
- * The website build. Everything is rendered and written to a staging folder first, so a
- * failure at any step leaves the previous site untouched; only then is it moved into place.
+ * The website build. Everything, search index included, is written to a staging folder;
+ * only a complete site replaces the output, and only an output this publisher made.
  */
 export class Site {
   constructor(
@@ -56,7 +58,7 @@ export class Site {
       await SiteAssets.build(routes),
       media,
       SourceHistory.read(this.vault),
-      Site.existingPdfs(out),
+      this.currentPdfs(out, routes),
       this.options.liveReload ?? false,
     )
 
@@ -67,12 +69,16 @@ export class Site {
     outputs.set("sitemap.xml", xml)
     outputs.set("robots.txt", robots)
     outputs.set(".nojekyll", "")
-    outputs.set(OUTPUT.marker, "Built by the books publisher; this folder is replaced on every build.\n")
     for (const asset of context.assets.files) outputs.set(asset.output, asset.content)
 
-    const staging = path.join(path.dirname(out), `.${path.basename(out)}.staging`)
-    fs.rmSync(staging, { recursive: true, force: true })
+    const staging = FolderSwap.scratch(out, "staging")
+    FolderSwap.discard(staging)
     try {
+      Site.write(
+        staging,
+        OUTPUT.marker,
+        "Built by the books publisher; this folder is replaced on every build.\n",
+      )
       for (const [file, content] of outputs) Site.write(staging, file, content)
       const copied = media.copyTo(staging)
       const search = this.options.search ?? writeSearchIndex
@@ -81,10 +87,10 @@ export class Site {
           staging,
           pages.map((page) => ({ url: page.pathname, file: routes.file(page.pathname) })),
         )
-      Site.replace(out, staging)
-      return { pages: pages.length, files: outputs.size + copied }
+      new FolderSwap().replace(out, staging, [OUTPUT.pdf])
+      return { pages: pages.length, files: outputs.size + copied + 1 }
     } finally {
-      fs.rmSync(staging, { recursive: true, force: true })
+      FolderSwap.discard(staging)
     }
   }
 
@@ -104,7 +110,19 @@ export class Site {
     return pages
   }
 
-  /** Only a folder this publisher made (or an empty one) may be replaced. */
+  /** PDFs whose recorded fingerprint still matches their edition's sources. */
+  private currentPdfs(out: string, routes: Routes): Set<string> {
+    const shelf = PdfShelf.open(path.join(out, OUTPUT.pdf))
+    const names = this.series.books
+      .flatMap((book) => book.editions)
+      .filter((edition) =>
+        shelf.isCurrent(routes.pdfName(edition), PdfShelf.fingerprint(this.vault, edition)),
+      )
+      .map((edition) => routes.pdfName(edition))
+    return new Set(names)
+  }
+
+  /** Only a folder this publisher made (or an empty one, or one holding only PDFs) may be replaced. */
   private static assertReplaceable(out: string) {
     if (!fs.existsSync(out)) return
     if (!fs.statSync(out).isDirectory()) throw new PublishError(`Output ${out} is a file, not a folder.`)
@@ -113,23 +131,6 @@ export class Site {
     throw new PublishError(
       `Refusing to replace ${out}: it is not empty and was not created by this publisher. Delete it or pick another --out.`,
     )
-  }
-
-  private static existingPdfs(out: string): Set<string> {
-    const folder = path.join(out, OUTPUT.pdf)
-    return new Set(
-      fs.existsSync(folder) ? fs.readdirSync(folder).filter((name) => name.endsWith(".pdf")) : [],
-    )
-  }
-
-  /** Swaps the staged site in, keeping PDFs, which `npm run pdf` builds separately. */
-  private static replace(out: string, staging: string) {
-    fs.mkdirSync(out, { recursive: true })
-    for (const entry of fs.readdirSync(out)) {
-      if (entry !== OUTPUT.pdf) fs.rmSync(path.join(out, entry), { recursive: true, force: true })
-    }
-    for (const entry of fs.readdirSync(staging))
-      fs.renameSync(path.join(staging, entry), path.join(out, entry))
   }
 
   private static write(root: string, file: string, content: string | Buffer) {

@@ -164,9 +164,13 @@ test("formulas and code are finished at build time", () => {
 
 test("sitemap, robots and search index are published", () => {
   const sitemap = fs.readFileSync(path.join(site.root, "sitemap.xml"), "utf8")
-  assert.match(sitemap, /<loc>https:\/\/books\.example\.org\/books\/zh\/linear-algebra\/01\/<\/loc>/)
+  const listed = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1] ?? "").sort()
+  const indexable = site.pages
+    .filter((page) => head(page).links("canonical").length)
+    .map((page) => new URL(page.pathname, SITE_URL.origin).href)
+    .sort()
+  assert.deepEqual(listed, indexable)
   assert.match(sitemap, /hreflang="en" href="https:\/\/books\.example\.org\/books\/en\/linear-algebra\/01\/"/)
-  assert.doesNotMatch(sitemap, /404\.html|<loc>https:\/\/books\.example\.org\/books\/<\/loc>/)
   const robots = fs.readFileSync(path.join(site.root, "robots.txt"), "utf8")
   assert.match(robots, /Sitemap: https:\/\/books\.example\.org\/books\/sitemap\.xml/)
   assert.ok(fs.existsSync(path.join(site.root, "pagefind", "pagefind-ui.js")))

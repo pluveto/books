@@ -3,6 +3,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { afterEach, beforeEach, test } from "node:test"
 import { PublishCommand } from "../../publish/cli.ts"
+import { PdfShelf } from "../../publish/site/pdf-shelf.ts"
 import { Site } from "../../publish/site/site.ts"
 import { BOOK_MD, makeVault, readSeries, tempDir } from "../support/fixture.ts"
 import { BuiltSite } from "../support/site-audit.ts"
@@ -32,7 +33,7 @@ test("build writes the site and a content error exits 1 naming the file", async 
 
   const broken = makeVault({ "alpha/book.md": BOOK_MD.replace("#1f4e5f", "#fff") })
   assert.equal(await PublishCommand.run(["build", "--vault", broken, "--out", out, "--no-search"]), 1)
-  assert.match(errors.join("\n"), /vault\/alpha\/book\.md:2: frontmatter "color" #fff has contrast/)
+  assert.match(errors.join("\n"), /books-vault-\w+\/alpha\/book\.md:2: frontmatter "color" #fff has contrast/)
   assert.ok(
     fs.existsSync(path.join(out, "zh", "alpha", "01", "index.html")),
     "a failed build keeps the old site",
@@ -62,6 +63,33 @@ test("a failure after rendering leaves the previous site byte-for-byte", async (
   )
   assert.deepEqual(snapshot(out), before)
   assert.equal(fs.existsSync(path.join(path.dirname(out), `.${path.basename(out)}.staging`)), false)
+})
+
+test("cover pages link a PDF only while it matches the edition's sources", async () => {
+  const root = makeVault()
+  const out = tempDir("books-shelf-")
+  const { vault, series } = readSeries(root)
+  const edition = series.books[0]?.edition("zh")
+  assert.ok(edition)
+  const shelf = PdfShelf.open(path.join(out, "pdf"))
+  fs.mkdirSync(path.join(out, "pdf"), { recursive: true })
+  fs.writeFileSync(path.join(out, "pdf", "alpha.zh.pdf"), "%PDF")
+  fs.writeFileSync(path.join(out, "pdf", "gone.zh.pdf"), "%PDF")
+  shelf.record("alpha.zh.pdf", "alpha.zh.pdf", PdfShelf.fingerprint(vault, edition))
+  shelf.record("gone.zh.pdf", "gone.zh.pdf", "stale")
+  shelf.prune(new Set(["alpha.zh.pdf"]))
+  shelf.save()
+  assert.equal(fs.existsSync(path.join(out, "pdf", "gone.zh.pdf")), false)
+
+  const cover = () => fs.readFileSync(path.join(out, "zh", "alpha", "index.html"), "utf8")
+  await new Site(vault, series, { out, search: false }).build()
+  assert.match(cover(), /href="\/pdf\/alpha\.zh\.pdf"/)
+  assert.ok(fs.existsSync(path.join(out, "pdf", "alpha.zh.pdf")), "the build keeps the PDF")
+
+  fs.appendFileSync(path.join(root, "alpha", "zh", "01-第一章.md"), "\n新的一段。\n")
+  const changed = readSeries(root)
+  await new Site(changed.vault, changed.series, { out, search: false }).build()
+  assert.doesNotMatch(cover(), /alpha\.zh\.pdf/, "a PDF built from older sources is not linked")
 })
 
 test("usage errors exit 64", async () => {

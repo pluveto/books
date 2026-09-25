@@ -14,10 +14,11 @@ export class PublishError extends Error {
     this.name = "PublishError"
   }
 
-  describe(): string {
+  /** `vault` is how the vault folder should be shown, e.g. relative to the working directory. */
+  describe(vault = "vault"): string {
     if (!this.location) return this.message
     const where = this.location.line ? `${this.location.file}:${this.location.line}` : this.location.file
-    return `vault/${where}: ${this.message}`
+    return `${vault}/${where}: ${this.message}`
   }
 }
 
