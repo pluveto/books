@@ -46,6 +46,16 @@ export class MacroSet {
     return Object.fromEntries(this.definitions)
   }
 
+  /** Each definition as a single `\renewcommand` line, keyed by macro name. */
+  lines(): Map<string, string> {
+    const lines = new Map<string, string>()
+    for (const [name, value] of this.definitions) {
+      const [body, arity] = typeof value === "string" ? [value, 0] : value
+      lines.set(name, `\\renewcommand{\\${name}}${arity ? `[${arity}]` : ""}{${body}}`)
+    }
+    return lines
+  }
+
   private static group(source: string, start: number): { body: string; end: number } {
     if (source[start] !== "{") throw new MacroError("expected {...} after \\newcommand")
     let depth = 0
