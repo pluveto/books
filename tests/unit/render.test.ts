@@ -104,6 +104,24 @@ test("highlights, comments, footnotes and tables follow Obsidian and GFM", async
   assert.match(html, /<table>[\s\S]*<td><span class="formula formula-inline"/)
 })
 
+test("callouts without a title are named in the page's language", async () => {
+  const html = await render(
+    "# 第二章\n\n> [!note]\n> 甲\n\n> [!proof]-\n> 乙\n\n> [!summary]\n> 丙\n\n> [!custom]\n> 丁\n",
+  )
+  const titles = [...html.matchAll(/callout-title-inner"><p>([^<]*)<\/p>/g)].map((match) => match[1]?.trim())
+  assert.deepEqual(titles, ["注", "证明", "摘要", "Custom"])
+})
+
+test("same-page Markdown fragments must name a heading", async () => {
+  const html = decodeURI(await render("# 第二章\n\n## 本节\n\n见 [上面](#本节)。\n"))
+  assert.match(html, /<a href="\/sub\/zh\/alpha\/02\/#本节">上面<\/a>/)
+  await rejects(
+    "# 第二章\n\n\n见 [哪里](#不存在)。\n",
+    /no heading "不存在"/,
+    "vault/alpha/zh/02-第二章.md:4",
+  )
+})
+
 test("the PDF output leaves math as TeX for Pandoc", async () => {
   const html = await render("# 第二章\n\n$x$ 与\n\n$$\ny\n$$\n", "pdf")
   assert.match(html, /<span class="math inline">x<\/span>/)

@@ -27,6 +27,8 @@ export interface Messages {
   readonly layoutCredit: string
   readonly frontMatter: string
   readonly footnotes: string
+  /** Titles of callouts written without one, by Obsidian callout type. */
+  readonly calloutTitles: Readonly<Record<string, string>>
   backToReference(number: number): string
   readonly status: Readonly<Record<BookStatus, string>>
   readonly notFoundTitle: string
@@ -66,6 +68,25 @@ const zh: Messages = {
   layoutCredit: "版式源自欧长坤《现代 C++ 教程》",
   frontMatter: "前言",
   footnotes: "脚注",
+  calloutTitles: {
+    note: "注",
+    abstract: "摘要",
+    info: "说明",
+    todo: "待办",
+    tip: "提示",
+    success: "成功",
+    question: "问题",
+    warning: "注意",
+    failure: "失败",
+    danger: "危险",
+    bug: "缺陷",
+    example: "例",
+    quote: "引文",
+    definition: "定义",
+    theorem: "定理",
+    proof: "证明",
+    aside: "旁注",
+  },
   backToReference: (number) => `返回正文第 ${number} 处引用`,
   status: { draft: "撰写中", complete: "已完成" },
   notFoundTitle: "页面不存在",
@@ -104,6 +125,25 @@ const en: Messages = {
   layoutCredit: "Layout adapted from Changkun Ou's Modern C++ Tutorial",
   frontMatter: "Preface",
   footnotes: "Footnotes",
+  calloutTitles: {
+    note: "Note",
+    abstract: "Abstract",
+    info: "Info",
+    todo: "To do",
+    tip: "Tip",
+    success: "Success",
+    question: "Question",
+    warning: "Warning",
+    failure: "Failure",
+    danger: "Danger",
+    bug: "Bug",
+    example: "Example",
+    quote: "Quote",
+    definition: "Definition",
+    theorem: "Theorem",
+    proof: "Proof",
+    aside: "Aside",
+  },
   backToReference: (number) => `Back to reference ${number}`,
   status: { draft: "In progress", complete: "Complete" },
   notFoundTitle: "Page not found",

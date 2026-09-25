@@ -163,11 +163,7 @@ export function remarkObsidianLinks() {
         return SKIP
       }
 
-      if (
-        (node.type === "link" || node.type === "image") &&
-        !SCHEME.test(node.url) &&
-        !node.url.startsWith("#")
-      ) {
+      if ((node.type === "link" || node.type === "image") && !SCHEME.test(node.url)) {
         const { path: target, heading } = splitUrl(node.url)
         const reference = { path: target, heading, written: `(${node.url})`, line }
         node.url = node.type === "image" ? resolver.image(reference) : resolver.href(reference).url

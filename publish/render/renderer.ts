@@ -9,6 +9,7 @@ import type { Chapter } from "../model/chapter.ts"
 import type { Edition } from "../model/edition.ts"
 import type { Series } from "../model/series.ts"
 import type { FileIndex } from "../obsidian/file-index.ts"
+import { remarkCalloutTitles } from "./callouts.ts"
 import { rehypeFormulaCheck, rehypeFormulaLabels, rehypePandocMath } from "./formulas.ts"
 import { rehypeHeadingAnchors, rehypeImages, remarkHeadingIds } from "./headings.ts"
 import { remarkObsidianLinks } from "./links.ts"
@@ -47,6 +48,7 @@ export class ChapterRenderer {
     const processor = unified()
       .use(remarkObsidianLinks)
       .use(remarkHeadingIds)
+      .use(remarkCalloutTitles)
       .use(quartz.markdownPlugins())
       .use(remarkRehype, {
         allowDangerousHtml: true,
