@@ -1,0 +1,41 @@
+@media print {
+  .site-header,
+  .sidebar,
+  .sidebar-backdrop,
+  .site-footer,
+  .chapter-footer,
+  .search-dialog,
+  .copy-button,
+  .heading-anchor,
+  .skip-link {
+    display: none !important;
+  }
+
+  .book-layout {
+    display: block;
+  }
+
+  .content {
+    padding: 0;
+  }
+
+  .content > * {
+    max-width: none;
+  }
+
+  .prose a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .prose pre,
+  .callout,
+  .formula-display,
+  .prose img {
+    break-inside: avoid;
+  }
+
+  .js .callout.is-collapsed > .callout-content {
+    display: block;
+  }
+}

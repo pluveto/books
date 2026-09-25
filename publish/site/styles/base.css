@@ -1,0 +1,207 @@
+:root {
+  --header-height: 56px;
+  --sidebar-width: 288px;
+  --content-width: 46rem;
+  --radius: 8px;
+
+  --font-sans:
+    "Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono",
+    monospace;
+
+  --bg: #ffffff;
+  --bg-soft: #f8f7f4;
+  --bg-sunk: #f2f1ed;
+  --ink: #1f2328;
+  --ink-2: #3a4048;
+  --ink-3: #626a73;
+  --line: #e4e1db;
+  --code-inline: #a34f00;
+  --header-ink: #ffffff;
+  --footer-bg: #1e2126;
+  --footer-ink: #c8c5bf;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.18);
+
+  --accent: var(--book-accent, #7e2d36);
+  /* Accent for text on tinted surfaces, where plain accent can fall below 4.5:1. */
+  --accent-strong: color-mix(in srgb, var(--accent) 78%, #000);
+  --code-bg: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #181a1f;
+  --bg-soft: #1d2025;
+  --bg-sunk: #14161a;
+  --ink: #ecebe8;
+  --ink-2: #cfccc6;
+  --ink-3: #a09c95;
+  --line: #2f333a;
+  --code-inline: #f2a766;
+  --footer-bg: #111317;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -12px rgb(0 0 0 / 0.6);
+
+  --accent: var(--book-accent-dark, #d88d95);
+  --accent-strong: color-mix(in srgb, var(--accent) 80%, #fff);
+  --code-bg: #14161a;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-height) + 16px);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+kbd {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.visually-hidden,
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 100;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  transition: top 0.15s;
+}
+
+.skip-link:focus {
+  top: 10px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.4;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.button:hover {
+  border-color: var(--accent);
+}
+
+.button-primary {
+  border-color: var(--book-accent, var(--accent));
+  background: var(--book-accent, var(--accent));
+  color: #fff;
+}
+
+.button-primary:hover {
+  background: color-mix(in srgb, var(--book-accent, var(--accent)) 88%, #000);
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-complete {
+  --accent: #2c7a4b;
+}
+
+:root[data-theme="dark"] .badge-complete {
+  --accent: #6cc58f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

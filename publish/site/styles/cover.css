@@ -1,0 +1,75 @@
+.cover {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 3px 10px 10px 3px;
+  background: var(--cover);
+  color: #f7efe4;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.18),
+    0 18px 36px -14px rgb(0 0 0 / 0.45);
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+.cover::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  width: 7%;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.32), rgb(0 0 0 / 0.08) 70%, rgb(255 255 255 / 0.12));
+}
+
+.cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 70% at 85% 0%, rgb(255 255 255 / 0.14), transparent 60%),
+    linear-gradient(180deg, transparent 55%, rgb(0 0 0 / 0.16));
+}
+
+.cover-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 13cqi 11cqi 9cqi 15cqi;
+}
+
+.cover-title {
+  font-size: 11.5cqi;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+}
+
+.cover-subtitle {
+  margin-top: 3cqi;
+  font-size: 5cqi;
+  line-height: 1.35;
+  opacity: 0.82;
+}
+
+.cover-art {
+  flex: 1;
+  width: 86%;
+  min-height: 0;
+  margin: 4cqi auto 4cqi;
+  object-fit: contain;
+}
+
+.cover-imprint {
+  padding-top: 3.2cqi;
+  border-top: 1px solid rgb(255 255 255 / 0.28);
+  font-size: 4.2cqi;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+}
+
+.cover-hero {
+  width: 260px;
+  flex: none;
+}
