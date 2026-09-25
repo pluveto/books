@@ -4,16 +4,13 @@ import * as pagefind from "pagefind"
 import { OUTPUT } from "./protocol.ts"
 
 export interface IndexedPage {
-  /** Public path, base path included, that search results link to. */
+  /** Path relative to the site's base path; the search UI prefixes the base itself. */
   readonly url: string
   /** HTML file relative to the site folder. */
   readonly file: string
 }
 
-/**
- * Full-text search built at build time, one index per page language. Pages are added one
- * by one in a fixed order so the index is reproducible and its links carry the base path.
- */
+/** Full-text search built at build time, one index per page language, pages in a fixed order. */
 export async function writeSearchIndex(folder: string, pages: readonly IndexedPage[]): Promise<void> {
   const { index, errors } = await pagefind.createIndex({})
   try {

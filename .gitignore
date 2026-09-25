@@ -16,3 +16,4 @@ Thumbs.db
 .idea/
 
 .tmp/
+dist-subpath/

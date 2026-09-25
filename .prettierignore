@@ -6,3 +6,4 @@ playwright-report/
 vault/
 .tmp/
 *.svg
+dist-subpath/

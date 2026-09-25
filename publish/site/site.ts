@@ -72,6 +72,8 @@ export class Site {
     for (const asset of context.assets.files) outputs.set(asset.output, asset.content)
 
     const staging = FolderSwap.scratch(out, "staging")
+    const swap = new FolderSwap()
+    swap.recover(out, staging, [OUTPUT.pdf])
     FolderSwap.discard(staging)
     try {
       Site.write(
@@ -82,12 +84,14 @@ export class Site {
       for (const [file, content] of outputs) Site.write(staging, file, content)
       const copied = media.copyTo(staging)
       const search = this.options.search ?? writeSearchIndex
-      if (search)
-        await search(
-          staging,
-          pages.map((page) => ({ url: page.pathname, file: routes.file(page.pathname) })),
-        )
-      new FolderSwap().replace(out, staging, [OUTPUT.pdf])
+      if (search) {
+        const indexed = pages.map((page) => ({
+          url: routes.searchUrl(page.pathname),
+          file: routes.file(page.pathname),
+        }))
+        await search(staging, indexed)
+      }
+      swap.replace(out, staging, [OUTPUT.pdf])
       return { pages: pages.length, files: outputs.size + copied + 1 }
     } finally {
       FolderSwap.discard(staging)

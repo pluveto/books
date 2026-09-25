@@ -81,6 +81,7 @@ export async function renderDocument(page: Page, site: SiteContext): Promise<str
       <body
         class={page.bodyClass}
         data-search-bundle={routes.searchBundle()}
+        data-search-base={routes.base}
         data-search-unavailable={text.searchUnavailable}
         data-copy-label={text.copy}
         data-copied-label={text.copied}

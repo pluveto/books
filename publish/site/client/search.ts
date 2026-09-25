@@ -1,6 +1,7 @@
 interface PagefindUIOptions {
   element: Element
   bundlePath: string
+  baseUrl: string
   showSubResults: boolean
   showImages: boolean
   resetStyles: boolean
@@ -32,7 +33,8 @@ export function initSearch() {
   const dialog = document.querySelector<HTMLDialogElement>("[data-search-dialog]")
   const target = dialog?.querySelector("[data-search-ui]")
   const bundle = document.body.dataset.searchBundle
-  if (!dialog || !target || !bundle) return
+  const base = document.body.dataset.searchBase
+  if (!dialog || !target || !bundle || !base) return
   let ready: Promise<void> | undefined
 
   const prepare = () => {
@@ -44,6 +46,7 @@ export function initSearch() {
       new window.PagefindUI({
         element: target,
         bundlePath: bundle,
+        baseUrl: base,
         showSubResults: true,
         showImages: false,
         resetStyles: false,

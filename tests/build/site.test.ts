@@ -175,13 +175,19 @@ test("sitemap, robots and search index are published", () => {
   assert.match(robots, /Sitemap: https:\/\/books\.example\.org\/books\/sitemap\.xml/)
   assert.ok(fs.existsSync(path.join(site.root, "pagefind", "pagefind-ui.js")))
   const fragments = fs.readdirSync(path.join(site.root, "pagefind", "fragment"))
-  const urls = fragments.map((name) =>
-    zlib.gunzipSync(fs.readFileSync(path.join(site.root, "pagefind", "fragment", name))).toString("utf8"),
-  )
+  const urls = fragments.map((name) => {
+    const fragment = zlib
+      .gunzipSync(fs.readFileSync(path.join(site.root, "pagefind", "fragment", name)))
+      .toString()
+    return /"url":"([^"]+)"/.exec(fragment)?.[1] ?? ""
+  })
   assert.ok(urls.length >= 18)
-  assert.ok(
-    urls.every((fragment) => /"url":"\/books\/(zh|en)\//.test(fragment)),
-    "search results link under the base path",
+  // The search UI joins its baseUrl (the site's base path) and a result's url.
+  const links = urls.map((url) => `${SITE_URL.pathname}${url.replace(/^\//, "")}`)
+  assert.deepEqual(
+    links.filter((link) => !site.page(link)),
+    [],
+    "every search result opens a built page",
   )
 })
 

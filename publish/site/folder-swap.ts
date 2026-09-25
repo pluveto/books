@@ -66,6 +66,21 @@ export class FolderSwap {
       const reason = error instanceof Error ? error.message : String(error)
       throw new PublishError(`Could not replace ${out}; the previous output is unchanged (${reason}).`)
     }
-    if (existed) fs.rmSync(previous, { recursive: true, force: true })
+    try {
+      if (existed) fs.rmSync(previous, { recursive: true, force: true })
+    } catch {
+      // The new output is in place; a leftover previous folder is discarded by the next run.
+    }
+  }
+
+  /** Brings kept folders back to the output if an earlier run died after moving them. */
+  recover(out: string, staging: string, keep: readonly string[]) {
+    for (const name of keep) {
+      const stranded = path.join(staging, name)
+      if (fs.existsSync(stranded) && !fs.existsSync(path.join(out, name))) {
+        fs.mkdirSync(out, { recursive: true })
+        this.rename(stranded, path.join(out, name))
+      }
+    }
   }
 }

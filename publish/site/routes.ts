@@ -61,6 +61,11 @@ export class Routes {
     return `${this.base}${OUTPUT.search}/`
   }
 
+  /** Pages are indexed relative to the base path; the search UI adds `base` to every result. */
+  searchUrl(pathname: string): string {
+    return `/${this.file(pathname).replace(/(^|\/)index\.html$/, "$1")}`
+  }
+
   sitemap(): string {
     return `${this.base}sitemap.xml`
   }
