@@ -49,6 +49,26 @@ test("search finds chapters in the page's language", async ({ page }) => {
   }
 })
 
+test("search downloads nothing until it is opened", async ({ page }) => {
+  const requests: string[] = []
+  page.on("request", (request) => {
+    if (request.url().includes("/pagefind/")) requests.push(request.url())
+  })
+  await page.goto("/zh/linear-algebra/01/", { waitUntil: "networkidle" })
+  expect(requests).toEqual([])
+  await page.locator("[data-search-open]").click()
+  await expect(page.locator(".pagefind-ui__search-input")).toBeVisible()
+  expect(requests.length).toBeGreaterThan(0)
+})
+
+test("a saved theme is applied before the script bundle runs", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" })
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"))
+  await page.route("**/assets/site.*.js", (route) => route.abort())
+  await page.goto("/zh/linear-algebra/01/")
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark")
+})
+
 test("a foldable proof opens from the keyboard", async ({ page }) => {
   await page.goto("/zh/linear-algebra/02/")
   const callout = page.locator('.callout[data-callout="proof"]')

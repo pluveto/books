@@ -83,7 +83,7 @@ test(
       for (const leak of ["\\(", "\\[", "\\R", "\\norm", "\\mathbb", "\\P(", "↩"]) {
         assert.equal(text.includes(leak), false, `${slug}.${language}: found ${leak}`)
       }
-      if (language === "zh") assert.match(text, /第\s*1\s*章/)
+      if (language === "zh") assert.match(text, /第\s*(1|一)\s*章/)
     }
   },
 )
