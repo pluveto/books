@@ -64,7 +64,7 @@ export class PdfBook {
   async write(output: string): Promise<void> {
     PdfBook.require(["pandoc", "xelatex", "rsvg-convert"])
     this.requireFont()
-    await this.withInput(async (input, header) => {
+    await this.withInput((input, header) => {
       fs.mkdirSync(path.dirname(output), { recursive: true })
       this.pandoc([...this.readerArguments(), ...this.writerArguments(header), input, "-o", output])
     })
@@ -74,7 +74,7 @@ export class PdfBook {
   async inspect(): Promise<unknown> {
     PdfBook.require(["pandoc"])
     let json = ""
-    await this.withInput(async (input) => {
+    await this.withInput((input) => {
       json = this.pandoc([...this.readerArguments(), "--to=json", input])
     })
     return JSON.parse(json) as unknown
@@ -95,14 +95,14 @@ export class PdfBook {
     return `<!DOCTYPE html>\n<html lang="${lang}"><head><meta charset="utf-8"><title>${escape(this.edition.title)}</title></head><body>\n${sections.join("\n")}\n</body></html>\n`
   }
 
-  private async withInput(use: (input: string, header: string) => Promise<void>) {
+  private async withInput(use: (input: string, header: string) => void) {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "books-pdf-"))
     try {
       const input = path.join(work, "book.html")
       const header = path.join(work, "header.tex")
       fs.writeFileSync(input, await this.html(), "utf8")
       fs.writeFileSync(header, `\\usepackage{amsmath,amssymb}\n${this.edition.book.macros.tex}\n`, "utf8")
-      await use(input, header)
+      use(input, header)
     } finally {
       fs.rmSync(work, { recursive: true, force: true })
     }
