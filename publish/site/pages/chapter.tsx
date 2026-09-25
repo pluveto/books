@@ -68,7 +68,9 @@ export class ChapterPage implements Page {
             <article class="chapter" data-pagefind-body data-pagefind-filter={`book:${edition.title}`}>
               <header class="chapter-header">
                 <p class="chapter-kicker">{chapterLabel(chapter)}</p>
-                <h1 id={chapter.outline.title?.slug}>{chapter.title}</h1>
+                <h1 id={chapter.outline.title && site.routes.headingId(chapter.outline.title)}>
+                  {chapter.title}
+                </h1>
               </header>
               <div class="prose" dangerouslySetInnerHTML={{ __html: this.html }} />
             </article>

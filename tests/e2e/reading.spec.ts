@@ -69,6 +69,13 @@ test("a saved theme is applied before the script bundle runs", async ({ page }) 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark")
 })
 
+test("if the script bundle fails, folded callouts stay readable", async ({ page }) => {
+  await page.route("**/assets/site.*.js", (route) => route.abort())
+  await page.goto("/zh/linear-algebra/02/")
+  await expect(page.locator("html")).not.toHaveClass(/\bjs\b/)
+  await expect(page.locator('.callout[data-callout="proof"] .callout-content')).toBeVisible()
+})
+
 test("a foldable proof opens from the keyboard", async ({ page }) => {
   await page.goto("/zh/linear-algebra/02/")
   const callout = page.locator('.callout[data-callout="proof"]')
@@ -118,6 +125,17 @@ test.describe("desktop", () => {
   })
 })
 
+test.describe("phone without JavaScript", () => {
+  test.skip(({ isMobile }) => !isMobile, "only phones use the drawer")
+  test.use({ javaScriptEnabled: false })
+
+  test("the contents are shown above the text", async ({ page }) => {
+    await page.goto("/zh/probability/01/")
+    await expect(page.locator("#sidebar .toc-link").first()).toBeVisible()
+    await expect(page.locator("[data-sidebar-toggle]")).toBeHidden()
+  })
+})
+
 test.describe("phone", () => {
   test.skip(({ isMobile }) => !isMobile, "only phones use the drawer")
 
@@ -129,6 +147,7 @@ test.describe("phone", () => {
     await toggle.click()
     await expect(toggle).toHaveAttribute("aria-expanded", "true")
     await expect(sidebar).toBeInViewport()
+    await expect(page.locator("#content")).toHaveJSProperty("inert", true)
     await page.keyboard.press("Escape")
     await expect(toggle).toHaveAttribute("aria-expanded", "false")
     await expect(toggle).toBeFocused()

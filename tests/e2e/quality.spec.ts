@@ -5,6 +5,8 @@ const PAGES = [
   "/zh/",
   "/en/",
   "/zh/linear-algebra/",
+  "/en/calculus/",
+  "/zh/linear-algebra/00/",
   "/zh/linear-algebra/02/",
   "/en/calculus/02/",
   "/en/probability/02/",
@@ -28,7 +30,7 @@ for (const path of PAGES) {
   test(`${path} loads without errors or horizontal scrolling`, async ({ page }) => {
     const errors: string[] = []
     page.on("console", (message) => {
-      if (message.type() === "error" && !message.text().includes("404")) errors.push(message.text())
+      if (message.type() === "error") errors.push(message.text())
     })
     page.on("pageerror", (error) => errors.push(String(error)))
     await page.goto(path)

@@ -146,14 +146,23 @@
     background: none;
   }
 
+  /* Without scripts the contents sit above the text; with them they become a drawer. */
   .sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .js .sidebar {
     position: fixed;
     top: var(--header-height);
     bottom: 0;
     left: 0;
     z-index: 25;
     width: min(86vw, 320px);
-    height: auto;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
     box-shadow: var(--shadow);
     transform: translateX(-102%);
     visibility: hidden;
@@ -162,7 +171,7 @@
       visibility 0s linear 0.22s;
   }
 
-  .sidebar-open .sidebar {
+  .js .sidebar-open .sidebar {
     transform: none;
     visibility: visible;
     transition: transform 0.22s ease;

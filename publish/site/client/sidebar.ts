@@ -5,14 +5,19 @@ export function initSidebar() {
   const backdrop = document.querySelector<HTMLElement>("[data-sidebar-close]")
   if (!toggle || !sidebar) return
 
+  const behind = [...document.querySelectorAll<HTMLElement>("#content, .site-footer")]
   const setOpen = (open: boolean) => {
     document.body.classList.toggle("sidebar-open", open)
     toggle.setAttribute("aria-expanded", String(open))
     if (backdrop) backdrop.hidden = !open
+    for (const element of behind) element.inert = open
     if (open) sidebar.querySelector<HTMLElement>("[aria-current], a")?.focus()
   }
 
   toggle.addEventListener("click", () => setOpen(!document.body.classList.contains("sidebar-open")))
+  matchMedia("(min-width: 1024px)").addEventListener("change", (event) => {
+    if (event.matches) setOpen(false)
+  })
   backdrop?.addEventListener("click", () => setOpen(false))
   sidebar.addEventListener("click", (event) => {
     if ((event.target as Element).closest("a")) setOpen(false)

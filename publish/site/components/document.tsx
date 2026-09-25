@@ -4,8 +4,12 @@ import { messages } from "../../i18n.ts"
 import type { Page, SiteContext } from "../page.ts"
 import { RELOAD_PATH, STORAGE } from "../protocol.ts"
 
-/** Runs before first paint so a saved theme never flashes the other one. */
-const THEME_BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{var t=localStorage.getItem(${JSON.stringify(STORAGE.theme)})}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t})()`
+/**
+ * Runs before first paint so a saved theme never flashes the other one. The `js` class
+ * turns on script-driven layout (drawer, folding); it is withdrawn if the bundle fails to
+ * load, so the page falls back to its no-script form.
+ */
+const THEME_BOOT = `(function(){var d=document.documentElement;d.classList.add("js");addEventListener("error",function(e){var s=e.target;if(s&&s.tagName==="SCRIPT"&&s.hasAttribute("data-bundle"))d.classList.remove("js")},true);try{var t=localStorage.getItem(${JSON.stringify(STORAGE.theme)})}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t})()`
 
 const LIVE_RELOAD = `new EventSource(${JSON.stringify(RELOAD_PATH)}).onmessage=function(){location.reload()}`
 
@@ -68,9 +72,10 @@ export async function renderDocument(page: Page, site: SiteContext): Promise<str
         />
         <meta name="color-scheme" content="light dark" />
         <link rel="icon" href={assets.favicon} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={assets.touchIcon} />
         <link rel="stylesheet" href={assets.stylesheet} />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
-        <script src={assets.script} defer />
+        <script src={assets.script} defer data-bundle />
         {site.liveReload && <script dangerouslySetInnerHTML={{ __html: LIVE_RELOAD }} />}
       </head>
       <body

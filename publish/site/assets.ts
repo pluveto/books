@@ -21,6 +21,7 @@ export class SiteAssets {
     readonly stylesheet: string,
     readonly script: string,
     readonly favicon: string,
+    readonly touchIcon: string,
     readonly files: readonly AssetFile[],
   ) {}
 
@@ -36,11 +37,12 @@ export class SiteAssets {
       SiteAssets.bundle(path.join(here, "styles", "index.css")),
       SiteAssets.bundle(path.join(here, "client", "main.ts")),
     ])
-    const favicon = fs.readFileSync(path.join(here, "static", "favicon.svg"))
+    const staticFile = (name: string) => fs.readFileSync(path.join(here, "static", name))
     return new SiteAssets(
       publish("site", ".css", css),
       publish("site", ".js", js),
-      publish("favicon", ".svg", favicon),
+      publish("favicon", ".svg", staticFile("favicon.svg")),
+      publish("apple-touch-icon", ".png", staticFile("apple-touch-icon.png")),
       files,
     )
   }
