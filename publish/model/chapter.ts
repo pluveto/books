@@ -1,5 +1,6 @@
 import type { Root } from "mdast"
 import type { Edition } from "./edition.ts"
+import type { LanguageCode } from "./language.ts"
 import type { Heading, Outline } from "./outline.ts"
 
 export class Chapter {
@@ -30,5 +31,10 @@ export class Chapter {
 
   heading(reference: string): Heading | undefined {
     return this.outline.find(reference)
+  }
+
+  /** Chapters with the same number in two editions of a book are translations of each other. */
+  translation(language: LanguageCode): Chapter | undefined {
+    return this.edition.translation(language)?.chapter(this.order)
   }
 }

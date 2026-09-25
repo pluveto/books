@@ -36,17 +36,17 @@ export class ChapterPage implements Page {
 
   translations(): ReadonlyMap<LanguageCode, string> {
     const entries: [LanguageCode, string][] = []
-    for (const edition of this.chapter.edition.book.editions) {
-      const counterpart = edition.chapter(this.chapter.order)
-      if (counterpart) entries.push([edition.language, this.site.routes.chapter(counterpart)])
+    for (const { language } of this.chapter.edition.book.editions) {
+      const counterpart = this.chapter.translation(language)
+      if (counterpart) entries.push([language, this.site.routes.chapter(counterpart)])
     }
     return new Map(entries)
   }
 
   switchTarget(language: LanguageCode): string {
-    const edition = this.chapter.edition.translation(language)
-    const counterpart = edition?.chapter(this.chapter.order)
+    const counterpart = this.chapter.translation(language)
     if (counterpart) return this.site.routes.chapter(counterpart)
+    const edition = this.chapter.edition.translation(language)
     return edition ? this.site.routes.cover(edition) : this.site.routes.catalog(language)
   }
 
