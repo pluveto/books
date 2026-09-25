@@ -19,14 +19,14 @@ npm run dev      # build, serve at http://127.0.0.1:4173/ and rebuild on every s
 npm run build    # write the site to dist/
 ```
 
-PDFs are optional and need [Pandoc](https://pandoc.org/), XeLaTeX and the _Noto Serif CJK SC_ font (set `BOOKS_CJK_FONT` to use another):
+PDFs are optional and need [Pandoc](https://pandoc.org/), XeLaTeX (with `ctex` for Chinese), `rsvg-convert` and the _Noto Serif CJK SC_ font (set `BOOKS_CJK_FONT` to use another); `.github/pdf-packages.txt` lists the Ubuntu packages:
 
 ```sh
 npm run pdf                                  # every edition, into dist/pdf/
 npm run pdf -- --book calculus --lang en     # one edition
 ```
 
-A later `npm run build` keeps `dist/pdf/` and links the PDFs from each book's page. Without Pandoc or XeLaTeX the command exits with code 2 and says what is missing.
+A later `npm run build` keeps `dist/pdf/` and links the PDFs from each book's page. When a tool or the font is missing, the command exits with code 2 and names it. The build only ever replaces an output folder it created itself.
 
 ## Writing
 
@@ -43,10 +43,12 @@ vault/
     en/01-vectors.md
 ```
 
-- **Chapters** are `NN-name.md`. `00` is the preface. The first line of the body is the title as a level-1 heading; it is the only level-1 heading.
+- **Chapters** are `NN-name.md`. `00` is the preface. The first line of the body is the title as a level-1 heading; it is the only level-1 heading. Chapters with the same number in two language folders are translations of each other: the language switch and `hreflang` pair them.
+- **Frontmatter** is checked: `series.md`, `book.md` and chapters accept only their documented keys (chapters: `description`, plus Obsidian's `tags`, `aliases`, `cssclasses`), so a typo is reported instead of ignored.
+- **Figures** Obsidian pastes go to the note's own `assets/` folder; move one up to `<book>/assets/` to share it between languages.
 - **Links** follow Obsidian: `[[01-向量]]`, `[[01-向量#线性组合]]`, `[[01-向量#线性组合|alias]]`, `[[#heading on this page]]`, `[[linear-algebra/book]]`, plain Markdown links to `.md` files. A bare name must be unique in the vault unless it sits in the linking note's folder; otherwise write the path, exactly as Obsidian does.
 - **Embeds** are images only: `![[vector.svg|320]]`, `![[photo.png|Alt text|640x480]]`.
-- **Math** uses `$…$` and `$$…$$`. Macros live in the book's `book.md` as `\newcommand`/`\renewcommand`, so the website and the PDF read the same definitions.
+- **Math** uses `$…$` and `$$…$$`. Macros live in the book's `book.md` as `\newcommand`/`\renewcommand`, so the website and the PDF read the same definitions. For Obsidian's preview, install the community plugin _Extended MathJax_ and run `npm run preamble`, which writes every book's macros to `vault/preamble.sty`.
 - **Callouts** use Obsidian syntax, including foldable ones (`> [!proof]-`). Besides Obsidian's types the theme styles `definition`, `theorem` and `proof`; any other type renders with a neutral colour.
 - **Accent colours** must reach 4.5:1 contrast against white; the build says so otherwise.
 
@@ -60,7 +62,7 @@ npm test          # unit tests and a full build audited for broken links, SEO ta
 npm run test:e2e  # Playwright + axe: WCAG 2.1 AA in light and dark mode, desktop and phone
 ```
 
-CI runs all of them on Ubuntu, Windows and macOS, builds the PDFs on Ubuntu and deploys `main` to GitHub Pages. See [docs/acceptance.md](docs/acceptance.md) for what "done" means and [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised.
+CI runs them on Ubuntu, Windows and macOS, builds and checks the PDFs on Ubuntu, and deploys `main` to GitHub Pages only when every job passes. See [docs/acceptance.md](docs/acceptance.md) for what "done" means and [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised.
 
 ## Credits
 

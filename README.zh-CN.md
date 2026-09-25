@@ -19,14 +19,14 @@ npm run dev      # 构建并在 http://127.0.0.1:4173/ 预览，保存即重建
 npm run build    # 生成 dist/
 ```
 
-PDF 是可选的，需要 [Pandoc](https://pandoc.org/)、XeLaTeX 和 _Noto Serif CJK SC_ 字体（可用环境变量 `BOOKS_CJK_FONT` 换字体）：
+PDF 是可选的，需要 [Pandoc](https://pandoc.org/)、XeLaTeX（中文需要 `ctex`）、`rsvg-convert` 和 _Noto Serif CJK SC_ 字体（可用环境变量 `BOOKS_CJK_FONT` 换字体）；Ubuntu 上要装的包列在 `.github/pdf-packages.txt`：
 
 ```sh
 npm run pdf                                  # 所有版本，输出到 dist/pdf/
 npm run pdf -- --book calculus --lang zh     # 只生成一本书的一个语言版本
 ```
 
-之后再运行 `npm run build` 会保留 `dist/pdf/`，并在书的封面页放上下载链接。缺少 Pandoc 或 XeLaTeX 时，命令以退出码 2 结束并说明缺什么。
+之后再运行 `npm run build` 会保留 `dist/pdf/`，并在书的封面页放上下载链接。缺少工具或字体时，命令以退出码 2 结束并指出缺的是什么。构建只会替换它自己生成的输出目录。
 
 ## 写作
 
@@ -43,10 +43,12 @@ vault/
     en/01-vectors.md
 ```
 
-- **章节**文件名是 `NN-名字.md`，`00` 是前言。正文第一行是一级标题，也就是章名；每章只能有这一个一级标题。
+- **章节**文件名是 `NN-名字.md`，`00` 是前言。正文第一行是一级标题，也就是章名；每章只能有这一个一级标题。两个语言文件夹里编号相同的章节互为译本，语言切换和 `hreflang` 按编号配对。
+- **Frontmatter** 会被检查：`series.md`、`book.md` 和章节只接受文档里列出的键（章节可用 `description`，以及 Obsidian 自己的 `tags`、`aliases`、`cssclasses`），拼错的键会报错而不是被忽略。
+- **插图**：Obsidian 粘贴的图片会放进当前笔记旁的 `assets/`；要让各语言共用，就把它移到 `<书>/assets/`。
 - **链接**按 Obsidian 的规则解析：`[[01-向量]]`、`[[01-向量#线性组合]]`、`[[01-向量#线性组合|别名]]`、`[[#本页标题]]`、`[[linear-algebra/book]]`，以及指向 `.md` 的普通 Markdown 链接。短名要么在当前笔记所在的文件夹里，要么在全库唯一；否则写路径——和 Obsidian 自己插入链接的方式一样。
 - **嵌入**只支持图片：`![[vector.svg|320]]`、`![[photo.png|替代文字|640x480]]`。
-- **公式**用 `$…$` 和 `$$…$$`。宏写在该书的 `book.md` 里，只能用 `\newcommand` 或 `\renewcommand`，这样网页和 PDF 读的是同一份定义。
+- **公式**用 `$…$` 和 `$$…$$`。宏写在该书的 `book.md` 里，只能用 `\newcommand` 或 `\renewcommand`，这样网页和 PDF 读的是同一份定义。要在 Obsidian 预览里看到这些宏，安装社区插件 _Extended MathJax_，再运行 `npm run preamble`，它会把所有书的宏写进 `vault/preamble.sty`。
 - **提示块**用 Obsidian 语法，包括可折叠的 `> [!proof]-`。除了 Obsidian 自带的类型，主题还为 `definition`、`theorem`、`proof` 配了样式；其他类型用中性配色。
 - **主题色**与白色的对比度必须达到 4.5:1，否则构建会提示。
 
@@ -60,7 +62,7 @@ npm test          # 单元测试，以及一次完整构建的死链、SEO 标�
 npm run test:e2e  # Playwright + axe：亮色和深色、桌面和手机，都要达到 WCAG 2.1 AA
 ```
 
-CI 在 Ubuntu、Windows、macOS 上跑以上全部检查，在 Ubuntu 上构建 PDF，并把 `main` 部署到 GitHub Pages。「做完」的定义见 [docs/acceptance.md](docs/acceptance.md)，代码结构见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+CI 在 Ubuntu、Windows、macOS 上跑以上全部检查，在 Ubuntu 上构建并检查 PDF；只有全部任务通过，才会把 `main` 部署到 GitHub Pages。「做完」的定义见 [docs/acceptance.md](docs/acceptance.md)，代码结构见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 
