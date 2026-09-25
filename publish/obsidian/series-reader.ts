@@ -1,14 +1,14 @@
 import path from "node:path"
+import type { Root } from "mdast"
 import { PublishError } from "../errors.ts"
 import { AccentColor } from "../model/accent.ts"
-import { Book, BOOK_STATUSES, type BookStatus } from "../model/book.ts"
+import { Book, BOOK_STATUSES, isBookStatus } from "../model/book.ts"
 import { Chapter } from "../model/chapter.ts"
-import { Edition } from "../model/edition.ts"
-import { isLanguage, type LanguageCode } from "../model/language.ts"
+import { Edition, type EditionText } from "../model/edition.ts"
+import { isLanguage, LANGUAGES, type LanguageCode, type Languages } from "../model/language.ts"
 import { MacroError, MacroSet } from "../model/macro-set.ts"
 import { Outline } from "../model/outline.ts"
 import { Series, type License, type SeriesText } from "../model/series.ts"
-import type { Root } from "mdast"
 import type { Frontmatter, Vault } from "./vault.ts"
 
 /** Turns a note body into a Markdown AST; the render layer supplies Quartz's parser. */
@@ -23,6 +23,27 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const IMAGE = /\.(svg|png|jpe?g|webp|avif)$/i
 const DEFAULT_BRAND = "#7e2d36"
 
+const KEYS = {
+  series: [
+    "site_url",
+    "repository",
+    "branch",
+    "color",
+    "languages",
+    "books",
+    "license",
+    "license_url",
+    "code_license",
+    "code_license_url",
+    ...LANGUAGES,
+  ],
+  seriesText: ["title", "tagline", "author"],
+  book: ["color", "cover", "status", "macros", ...LANGUAGES],
+  bookText: ["title", "subtitle", "description"],
+  /** `description` is the publisher's; the rest are Obsidian's own properties. */
+  chapter: ["description", "tags", "aliases", "cssclasses"],
+} as const
+
 /** Builds the Series aggregate from the vault, rejecting anything the site could not publish. */
 export class SeriesReader {
   constructor(
@@ -34,12 +55,19 @@ export class SeriesReader {
     if (!this.vault.hasFile(SERIES_FILE))
       throw new PublishError(`${SERIES_FILE} is missing.`, { file: SERIES_FILE })
     const meta = this.vault.note(SERIES_FILE).frontmatter
+    meta.allowOnly(KEYS.series)
     const languages = this.languages(meta)
     const slugs = this.bookSlugs(meta)
     const texts = new Map<LanguageCode, SeriesText>()
-    for (const language of languages) {
+    for (const language of LANGUAGES) {
       const section = meta.section(language)
+      if (!languages.includes(language)) {
+        if (section)
+          throw meta.error(`has a "${language}" section but "${language}" is not in "languages"`, language)
+        continue
+      }
       if (!section) throw meta.error(`needs a "${language}" section with title and tagline`)
+      section.allowOnly(KEYS.seriesText)
       texts.set(language, {
         title: section.string("title"),
         tagline: section.string("tagline"),
@@ -59,30 +87,38 @@ export class SeriesReader {
     )
   }
 
-  private languages(meta: Frontmatter): LanguageCode[] {
-    const values = meta.strings("languages")
+  private languages(meta: Frontmatter): Languages {
     const languages: LanguageCode[] = []
-    for (const value of values) {
-      if (!isLanguage(value)) throw meta.error(`language "${value}" is not supported (use zh or en)`)
-      if (languages.includes(value)) throw meta.error(`language "${value}" is listed twice`)
+    for (const value of meta.strings("languages")) {
+      if (!isLanguage(value)) {
+        throw meta.error(
+          `language "${value}" is not supported (use one of ${LANGUAGES.join(", ")})`,
+          "languages",
+        )
+      }
+      if (languages.includes(value)) throw meta.error(`language "${value}" is listed twice`, "languages")
       languages.push(value)
     }
-    return languages
+    const [first, ...rest] = languages
+    if (!first) throw meta.error(`"languages" must not be empty`, "languages")
+    return [first, ...rest]
   }
 
   private bookSlugs(meta: Frontmatter): string[] {
     const slugs = meta.strings("books")
     const seen = new Set<string>()
     for (const slug of slugs) {
-      if (!SLUG.test(slug)) throw meta.error(`book "${slug}" must be a lowercase-hyphenated folder name`)
-      if (seen.has(slug)) throw meta.error(`book "${slug}" is listed twice`)
-      if (!this.vault.hasFile(`${slug}/${BOOK_FILE}`))
-        throw meta.error(`book "${slug}" has no ${slug}/${BOOK_FILE}`)
+      if (!SLUG.test(slug))
+        throw meta.error(`book "${slug}" must be a lowercase-hyphenated folder name`, "books")
+      if (seen.has(slug)) throw meta.error(`book "${slug}" is listed twice`, "books")
+      if (!this.vault.hasFile(`${slug}/${BOOK_FILE}`)) {
+        throw meta.error(`book "${slug}" has no ${slug}/${BOOK_FILE}`, "books")
+      }
       seen.add(slug)
     }
     for (const folder of this.vault.entries("").folders) {
       if (this.vault.hasFile(`${folder}/${BOOK_FILE}`) && !seen.has(folder)) {
-        throw meta.error(`"${folder}" has a ${BOOK_FILE} but is missing from "books"`)
+        throw meta.error(`"${folder}" has a ${BOOK_FILE} but is missing from "books"`, "books")
       }
     }
     return slugs
@@ -98,7 +134,7 @@ export class SeriesReader {
     const value = meta.optionalString(key)
     if (value === undefined) return undefined
     if (!URL.canParse(value) || !/^https?:$/.test(new URL(value).protocol)) {
-      throw meta.error(`"${key}" must be an http(s) URL`)
+      throw meta.error(`"${key}" must be an http(s) URL`, key)
     }
     return value.replace(/\/+$/, "")
   }
@@ -110,37 +146,38 @@ export class SeriesReader {
   }
 
   private book(series: Series, slug: string): Book {
-    const file = `${slug}/${BOOK_FILE}`
-    const meta = this.vault.note(file).frontmatter
+    const meta = this.vault.note(`${slug}/${BOOK_FILE}`).frontmatter
+    meta.allowOnly(KEYS.book)
     const accent = this.accent(meta)
     const cover = this.cover(meta, slug)
     const status = meta.string("status")
-    if (!(BOOK_STATUSES as readonly string[]).includes(status)) {
-      throw meta.error(`"status" must be one of ${BOOK_STATUSES.join(", ")}`)
-    }
+    if (!isBookStatus(status))
+      throw meta.error(`"status" must be one of ${BOOK_STATUSES.join(", ")}`, "status")
     let macros: MacroSet
     try {
       macros = MacroSet.parse(meta.optionalString("macros") ?? "")
     } catch (error) {
-      if (error instanceof MacroError) throw meta.error(`"macros": ${error.message}`)
+      if (error instanceof MacroError) throw meta.error(`"macros": ${error.message}`, "macros")
       throw error
     }
-    const languages = this.editionLanguages(series, slug, meta)
-    return new Book(series, slug, accent, cover, status as BookStatus, macros, (book) =>
-      languages.map(({ language, text }) => {
-        return new Edition(book, language, `${slug}/${language}`, text, (edition) => this.chapters(edition))
-      }),
+    const editions = this.editionTexts(series, slug, meta)
+    return new Book(series, slug, accent, cover, status, macros, (book) =>
+      editions.map(
+        ({ language, text }) =>
+          new Edition(book, language, `${slug}/${language}`, text, (edition) => this.chapters(edition)),
+      ),
     )
   }
 
   private accent(meta: Frontmatter, fallback?: string): AccentColor {
     const value = fallback === undefined ? meta.string("color") : (meta.optionalString("color") ?? fallback)
     const accent = AccentColor.parse(value)
-    if (!accent) throw meta.error(`"color" must be a hex colour such as "#1f4e5f"`)
+    if (!accent) throw meta.error(`"color" must be a hex colour such as "#1f4e5f"`, "color")
     const contrast = accent.contrastWith(AccentColor.WHITE)
     if (contrast < AccentColor.MIN_CONTRAST) {
       throw meta.error(
         `"color" ${value} has contrast ${contrast.toFixed(2)}:1 against white; pick a darker colour (at least ${AccentColor.MIN_CONTRAST}:1)`,
+        "color",
       )
     }
     return accent
@@ -150,12 +187,12 @@ export class SeriesReader {
     const value = meta.string("cover")
     const file = path.posix.normalize(`${slug}/${value.replace(/\\/g, "/")}`)
     if (!file.startsWith(`${slug}/`) || !IMAGE.test(file) || !this.vault.hasFile(file)) {
-      throw meta.error(`"cover" must name an image inside ${slug}/, got "${value}"`)
+      throw meta.error(`"cover" must name an image inside ${slug}/, got "${value}"`, "cover")
     }
     return file
   }
 
-  private editionLanguages(series: Series, slug: string, meta: Frontmatter) {
+  private editionTexts(series: Series, slug: string, meta: Frontmatter) {
     const { files, folders } = this.vault.entries(slug)
     for (const name of files) {
       if (name.endsWith(".md") && name !== BOOK_FILE) {
@@ -166,23 +203,26 @@ export class SeriesReader {
     }
     for (const folder of folders) {
       const hasNotes = this.vault.filesUnder(`${slug}/${folder}`).some((file) => file.endsWith(".md"))
-      if (hasNotes && !(series.languages as readonly string[]).includes(folder)) {
+      if (hasNotes && !series.languages.some((language) => language === folder)) {
         throw meta.error(
           `folder ${slug}/${folder}/ holds notes but "${folder}" is not a language in ${SERIES_FILE}`,
         )
       }
     }
-    const editions: {
-      language: LanguageCode
-      text: { title: string; subtitle: string; description: string }
-    }[] = []
-    for (const language of series.languages) {
+    const editions: { language: LanguageCode; text: EditionText }[] = []
+    for (const language of LANGUAGES) {
       const section = meta.section(language)
+      if (!series.languages.includes(language)) {
+        if (section)
+          throw meta.error(`has a "${language}" section but the series is not published in it`, language)
+        continue
+      }
       const hasFolder = this.vault.hasFolder(`${slug}/${language}`)
       if (hasFolder && !section) throw meta.error(`needs a "${language}" section for ${slug}/${language}/`)
       if (section && !hasFolder)
-        throw meta.error(`has a "${language}" section but no ${slug}/${language}/ folder`)
+        throw meta.error(`has a "${language}" section but no ${slug}/${language}/ folder`, language)
       if (!section) continue
+      section.allowOnly(KEYS.bookText)
       editions.push({
         language,
         text: {
@@ -216,21 +256,21 @@ export class SeriesReader {
       chapters.push(this.chapter(edition, order, file))
     }
     if (!chapters.length)
-      throw new PublishError(`${edition.folder}/ has no chapters.`, { file: `${edition.folder}` })
+      throw new PublishError(`${edition.folder}/ has no chapters.`, { file: edition.folder })
     return chapters.sort((a, b) => a.order - b.order)
   }
 
   private chapter(edition: Edition, order: number, file: string): Chapter {
     const note = this.vault.note(file)
+    note.frontmatter.allowOnly(KEYS.chapter)
     const tree = this.parser.parse(note.body)
     const outline = Outline.of(tree)
     const line = (heading?: { line: number | undefined }) =>
       heading?.line === undefined ? note.bodyLine : note.bodyLine + heading.line - 1
-    const first = outline.headings[0]
     if (!outline.title) {
       throw new PublishError(`a chapter starts with its title as a level-1 heading ("# Title").`, {
         file,
-        line: line(first),
+        line: line(outline.headings[0]),
       })
     }
     const extra = outline.headings.slice(1).find((heading) => heading.depth === 1)

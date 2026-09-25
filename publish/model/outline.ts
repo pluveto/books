@@ -41,11 +41,7 @@ export class Outline {
   /** Match `[[note#Heading]]` the way Obsidian does: by heading text, ignoring spacing and case. */
   find(reference: string): Heading | undefined {
     const wanted = Outline.normalize(reference)
-    const slug = new GithubSlugger().slug(reference.trim())
-    return (
-      this.headings.find((heading) => Outline.normalize(heading.text) === wanted) ??
-      this.headings.find((heading) => heading.slug === slug)
-    )
+    return this.headings.find((heading) => Outline.normalize(heading.text) === wanted)
   }
 
   private static normalize(text: string): string {

@@ -41,7 +41,11 @@ test("series.md problems name the key", () => {
   rejects({ "series.md": SERIES_MD.replace("languages: [zh, en]", "languages: [zh, fr]") }, /language "fr"/)
   rejects({ "series.md": SERIES_MD.replace("site_url: https://books.example.org\n", "") }, /site_url/)
   rejects({ "series.md": SERIES_MD.replace("books: [alpha]", "books: [alpha, beta]") }, /beta\/book\.md/)
-  rejects({ "beta/book.md": BOOK_MD }, /"beta" has a book\.md but is missing from "books"/, "vault/series.md")
+  rejects(
+    { "beta/book.md": BOOK_MD },
+    /"beta" has a book\.md but is missing from "books"/,
+    "vault/series.md:5",
+  )
   rejects(
     { "series.md": SERIES_MD.replace("\nen:\n  title: Test Books\n  tagline: For tests.\n", "\n") },
     /"en" section/,
@@ -56,6 +60,29 @@ test("book.md problems are caught before anything is written", () => {
   rejects({ "alpha/en/00-preface.md": null, "alpha/en/01-first.md": null }, /"en" section but no alpha\/en\//)
   rejects({ "alpha/fr/01-un.md": "# Un\n" }, /"fr" is not a language/)
   rejects({ "alpha/stray.md": "# Stray\n" }, /language folder/, "vault/alpha/stray.md")
+})
+
+test("frontmatter problems point at the key's line and suggest the intended key", () => {
+  rejects(
+    { "alpha/book.md": BOOK_MD.replace('color: "#1f4e5f"', 'color: "#ffd966"') },
+    /"color" #ffd966 has contrast/,
+    "vault/alpha/book.md:2",
+  )
+  rejects(
+    { "alpha/book.md": BOOK_MD.replace("  description: Blurb.", "  descripton: Blurb.") },
+    /unknown key "en.descripton"; did you mean "en.description"\?/,
+    "vault/alpha/book.md:14",
+  )
+  rejects(
+    { "alpha/zh/02-多余.md": "---\nsumary: x\n---\n# 多余\n" },
+    /unknown key "sumary"/,
+    "vault/alpha/zh/02-多余.md:2",
+  )
+  rejects(
+    { "series.md": SERIES_MD.replace("languages: [zh, en]", "languages: [zh]") },
+    /"en" section but "en" is not in "languages"/,
+    "vault/series.md:13",
+  )
 })
 
 test("chapter problems point at the file and line", () => {

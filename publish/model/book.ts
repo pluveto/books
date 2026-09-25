@@ -8,6 +8,10 @@ export const BOOK_STATUSES = ["draft", "complete"] as const
 
 export type BookStatus = (typeof BOOK_STATUSES)[number]
 
+export function isBookStatus(value: string): value is BookStatus {
+  return BOOK_STATUSES.some((status) => status === value)
+}
+
 /** Language-independent identity of a book: slug, look and math macros. */
 export class Book {
   readonly editions: readonly Edition[]

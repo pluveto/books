@@ -2,7 +2,7 @@ import type { AccentColor } from "./accent.ts"
 import type { Book } from "./book.ts"
 import type { Chapter } from "./chapter.ts"
 import type { Edition } from "./edition.ts"
-import type { LanguageCode } from "./language.ts"
+import type { LanguageCode, Languages } from "./language.ts"
 
 export interface License {
   readonly name: string
@@ -41,7 +41,7 @@ export class Series {
   constructor(
     readonly file: string,
     readonly settings: SeriesSettings,
-    readonly languages: readonly LanguageCode[],
+    readonly languages: Languages,
     private readonly texts: ReadonlyMap<LanguageCode, SeriesText>,
     books: (series: Series) => { book: Book; file: string }[],
   ) {
@@ -56,7 +56,7 @@ export class Series {
   }
 
   get defaultLanguage(): LanguageCode {
-    return this.languages[0] ?? "zh"
+    return this.languages[0]
   }
 
   text(language: LanguageCode): SeriesText {
@@ -67,10 +67,6 @@ export class Series {
 
   editions(language: LanguageCode): Edition[] {
     return this.books.flatMap((book) => book.edition(language) ?? [])
-  }
-
-  chapters(): Chapter[] {
-    return this.books.flatMap((book) => book.editions.flatMap((edition) => [...edition.chapters]))
   }
 
   /** Notes map to pages; any other vault file is published as media. */

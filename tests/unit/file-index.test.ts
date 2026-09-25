@@ -48,6 +48,23 @@ test("vault paths, relative paths and path suffixes all work", () => {
   assert.deepEqual(index.resolve("series", "a/zh/01-向量.md"), { kind: "found", file: "series.md" })
 })
 
+test("names match without regard to case, as in Obsidian", () => {
+  assert.deepEqual(index.resolve("A/ZH/01-向量", "b/zh/00-前言.md"), {
+    kind: "found",
+    file: "a/zh/01-向量.md",
+  })
+  assert.deepEqual(index.resolve("UNIQUE.PNG", "a/zh/01-向量.md"), {
+    kind: "found",
+    file: "b/assets/unique.png",
+  })
+  const mixed = new FileIndex(["x/Notes.md", "y/notes.md"])
+  assert.deepEqual(mixed.resolve("Notes", "z/a.md"), { kind: "found", file: "x/Notes.md" })
+  assert.deepEqual(mixed.resolve("NOTES", "z/a.md"), {
+    kind: "ambiguous",
+    candidates: ["x/Notes.md", "y/notes.md"],
+  })
+})
+
 test("relative paths cannot escape the vault and unknown names are missing", () => {
   assert.deepEqual(index.resolve("../../../etc/passwd", "a/zh/01-向量.md"), { kind: "missing" })
   assert.deepEqual(index.resolve("nothing", "a/zh/01-向量.md"), { kind: "missing" })

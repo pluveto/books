@@ -24,7 +24,7 @@ test("build writes the site and a content error exits 1 naming the file", async 
 
   const broken = makeVault({ "alpha/book.md": BOOK_MD.replace("#1f4e5f", "#fff") })
   assert.equal(await PublishCommand.run(["build", "--vault", broken, "--out", out, "--no-search"]), 1)
-  assert.match(errors.join("\n"), /vault\/alpha\/book\.md: frontmatter "color" #fff has contrast/)
+  assert.match(errors.join("\n"), /vault\/alpha\/book\.md:2: frontmatter "color" #fff has contrast/)
   assert.ok(
     fs.existsSync(path.join(out, "zh", "alpha", "01", "index.html")),
     "a failed build keeps the old site",
