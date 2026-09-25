@@ -76,4 +76,27 @@ local structure = {
   end,
 }
 
-return { math, footnotes, structure }
+-- Sections of an unnumbered chapter (the preface) are unnumbered too, and the running
+-- head names that chapter instead of whatever \chapter* left behind.
+local numbering = {
+  Pandoc = function(document)
+    local blocks = pandoc.List()
+    local unnumbered = false
+    for _, block in ipairs(document.blocks) do
+      blocks:insert(block)
+      if block.t == "Header" and block.level == 1 then
+        unnumbered = block.classes:includes("unnumbered")
+        if unnumbered then
+          local title = pandoc.utils.stringify(block)
+          blocks:insert(pandoc.RawBlock("latex", "\\markboth{" .. title .. "}{" .. title .. "}"))
+        end
+      elseif block.t == "Header" and unnumbered and not block.classes:includes("unnumbered") then
+        block.classes:insert("unnumbered")
+      end
+    end
+    document.blocks = blocks
+    return document
+  end,
+}
+
+return { math, footnotes, structure, numbering }

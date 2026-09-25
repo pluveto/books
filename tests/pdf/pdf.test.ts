@@ -93,8 +93,10 @@ test(
       for (const leak of ["\\(", "\\[", "\\R", "\\norm", "\\mathbb", "\\P(", "↩"]) {
         if (text.includes(leak)) problems.push(`${name}: found ${leak}`)
       }
-      if (!LABELS[language].test(text))
+      if (!LABELS[language].test(text)) {
         problems.push(`${name}: no "${String(LABELS[language])}" chapter label`)
+      }
+      if (/^0\.\d/m.test(text)) problems.push(`${name}: the preface has numbered sections`)
     }
     assert.deepEqual(problems, [])
   },
