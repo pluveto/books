@@ -6,10 +6,18 @@ import type { PluggableList } from "unified"
 import type { MacroSet } from "../model/macro-set.ts"
 
 /**
- * None of the three plugins reads the build context, which belongs to Quartz's own build.
- * Recheck their `textTransform`, `markdownPlugins` and `htmlPlugins` when upgrading them.
+ * The build context belongs to Quartz's own build, which this publisher does not run, and
+ * none of the three plugins reads it. Any read throws, so a plugin upgrade that starts
+ * depending on it fails every build instead of rendering with made-up values.
  */
-const context = {} as BuildCtx
+const context = new Proxy(
+  {},
+  {
+    get(_target, key) {
+      throw new Error(`a Quartz plugin read BuildCtx.${String(key)}, which this publisher does not provide`)
+    },
+  },
+) as BuildCtx
 
 /** Quartz's transformer stages for one book: text, Markdown AST, then HTML AST. */
 export class QuartzTransformers {
