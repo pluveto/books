@@ -92,6 +92,17 @@
   outline-color: #fff;
 }
 
+/* Search and the theme toggle need the script bundle. */
+.search-button,
+[data-theme-toggle] {
+  display: none;
+}
+
+.js .search-button,
+.js [data-theme-toggle] {
+  display: inline-flex;
+}
+
 .search-button {
   margin-right: 6px;
   padding: 0 8px 0 10px;

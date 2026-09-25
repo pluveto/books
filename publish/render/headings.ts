@@ -47,6 +47,7 @@ export function rehypeHeadingAnchors() {
           href: `#${node.properties.id}`,
           ariaHidden: "true",
           tabIndex: -1,
+          dataPagefindIgnore: "",
         },
         children: [{ type: "text", value: "#" }],
       })

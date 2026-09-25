@@ -74,6 +74,8 @@ test("if the script bundle fails, folded callouts stay readable", async ({ page 
   await page.goto("/zh/linear-algebra/02/")
   await expect(page.locator("html")).not.toHaveClass(/\bjs\b/)
   await expect(page.locator('.callout[data-callout="proof"] .callout-content')).toBeVisible()
+  await expect(page.locator("[data-search-open]")).toBeHidden()
+  await expect(page.locator("[data-theme-toggle]")).toBeHidden()
 })
 
 test("a foldable proof opens from the keyboard", async ({ page }) => {

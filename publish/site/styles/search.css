@@ -16,7 +16,7 @@
 .search-panel {
   position: relative;
   max-height: 84vh;
-  padding: 18px 18px 12px;
+  padding: 52px 18px 12px;
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -26,9 +26,8 @@
 
 .search-close {
   position: absolute;
-  top: 22px;
-  right: 22px;
-  z-index: 2;
+  top: 8px;
+  right: 10px;
   color: var(--ink-3);
 }
 
@@ -48,14 +47,6 @@
   --pagefind-ui-border-radius: 8px;
   --pagefind-ui-font: var(--font-sans);
   min-height: 60px;
-}
-
-.search-ui .pagefind-ui__search-input {
-  padding-right: 64px;
-}
-
-.search-ui .pagefind-ui__search-clear {
-  right: 48px;
 }
 
 .search-ui mark {
