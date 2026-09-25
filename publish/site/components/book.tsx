@@ -20,7 +20,7 @@ export function Cover({
       <div class="cover-face">
         <span class="cover-title">{edition.title}</span>
         <span class="cover-subtitle">{edition.text.subtitle}</span>
-        <img class="cover-art" src={site.media.url(book.cover)} alt="" width="240" height="240" />
+        <img class="cover-art" src={site.media.publish(book.cover)} alt="" width="240" height="240" />
         <span class="cover-imprint">{series.author ?? series.title}</span>
       </div>
     </div>
@@ -78,7 +78,7 @@ export function Sidebar({
                   <ol class="toc-sections">
                     {sections.map((heading) => (
                       <li class={`toc-section depth-${heading.depth}`}>
-                        <a href={`#${heading.slug}`} data-section={heading.slug}>
+                        <a href={`#${routes.headingId(heading)}`} data-section={routes.headingId(heading)}>
                           {heading.text}
                         </a>
                       </li>

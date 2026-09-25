@@ -6,20 +6,23 @@ import { PreviewServer } from "./dev/preview-server.ts"
 import { MissingToolError, PublishError } from "./errors.ts"
 import { isLanguage, type LanguageCode } from "./model/language.ts"
 import type { Series } from "./model/series.ts"
+import { ObsidianPreamble } from "./obsidian/preamble.ts"
 import { SeriesReader } from "./obsidian/series-reader.ts"
 import { Vault } from "./obsidian/vault.ts"
 import { PdfBook } from "./pdf/pdf-book.ts"
 import { MarkdownParser } from "./render/parser.ts"
+import { OUTPUT } from "./site/protocol.ts"
 import { Routes } from "./site/routes.ts"
-import { PDF_FOLDER, Site } from "./site/site.ts"
+import { Site } from "./site/site.ts"
 
 const USAGE = `Usage: npm run <command> -- [options]
 
 Commands:
-  build   Build the website into --out
-  dev     Build, serve on --port and rebuild when the vault changes
-  serve   Serve an existing build on --port
-  pdf     Build PDFs into --out/pdf (needs Pandoc and XeLaTeX)
+  build     Build the website into --out
+  dev       Build, serve on --port and rebuild when the vault changes
+  serve     Serve an existing build on --port
+  pdf       Build PDFs into --out/pdf (needs Pandoc, XeLaTeX and rsvg-convert)
+  preamble  Write vault/preamble.sty with every book's macros for Obsidian's preview
 
 Options:
   --vault <dir>     Obsidian vault (default: vault)
@@ -30,11 +33,15 @@ Options:
   --lang <code>     pdf: only this language
   --no-search       build: skip the Pagefind index`
 
-const EXIT = { ok: 0, content: 1, usage: 64, tool: 2 } as const
+const EXIT = { ok: 0, content: 1, tool: 2, usage: 64 } as const
 
-const COMMANDS = ["build", "dev", "serve", "pdf"] as const
+const COMMANDS = ["build", "dev", "serve", "pdf", "preamble"] as const
 
 type Command = (typeof COMMANDS)[number]
+
+function isCommand(value: string | undefined): value is Command {
+  return COMMANDS.some((command) => command === value)
+}
 
 interface Options {
   readonly vault: string
@@ -46,41 +53,32 @@ interface Options {
   readonly search: boolean
 }
 
+/** One invocation of the publisher: a command and its options. */
 export class PublishCommand {
+  private constructor(
+    private readonly command: Command,
+    private readonly options: Options,
+  ) {}
+
   static async run(argv: readonly string[]): Promise<number> {
-    let command: Command
-    let options: Options
+    let invocation: PublishCommand
     try {
-      ;({ command, options } = PublishCommand.parse(argv))
+      invocation = PublishCommand.parse(argv)
     } catch (error) {
       console.error(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`)
       return EXIT.usage
     }
     try {
-      switch (command) {
-        case "build":
-          await PublishCommand.build(options)
-          return EXIT.ok
-        case "dev":
-          await PublishCommand.dev(options)
-          return EXIT.ok
-        case "serve":
-          await PublishCommand.serve(options)
-          return EXIT.ok
-        case "pdf":
-          await PublishCommand.pdf(options)
-          return EXIT.ok
-      }
+      await invocation.execute()
+      return EXIT.ok
     } catch (error) {
-      if (error instanceof PublishError) {
-        console.error(`error: ${error.describe()}`)
-        return error instanceof MissingToolError ? EXIT.tool : EXIT.content
-      }
-      throw error
+      if (!(error instanceof PublishError)) throw error
+      console.error(`error: ${error.describe()}`)
+      return error instanceof MissingToolError ? EXIT.tool : EXIT.content
     }
   }
 
-  private static parse(argv: readonly string[]): { command: Command; options: Options } {
+  private static parse(argv: readonly string[]): PublishCommand {
     const { values, positionals } = parseArgs({
       args: [...argv],
       allowPositionals: true,
@@ -95,82 +93,93 @@ export class PublishCommand {
         search: { type: "boolean", default: true },
       },
     })
+    const command = positionals[0]
+    if (!isCommand(command)) throw new Error(command ? `unknown command "${command}"` : "missing command")
     const port = Number(values.port)
     if (!Number.isInteger(port) || port <= 0 || port > 65535) throw new Error(`invalid --port ${values.port}`)
     const siteUrl = values["site-url"]
     if (siteUrl !== undefined && !URL.canParse(siteUrl)) throw new Error(`invalid --site-url ${siteUrl}`)
     const language = values.lang
     if (language !== undefined && !isLanguage(language)) throw new Error(`unsupported --lang ${language}`)
-    const command = positionals[0]
-    if (!COMMANDS.some((known) => known === command)) {
-      throw new Error(command ? `unknown command "${command}"` : "missing command")
-    }
-    return {
-      command: command as Command,
-      options: {
-        vault: path.resolve(values.vault),
-        out: path.resolve(values.out),
-        siteUrl: siteUrl === undefined ? undefined : new URL(siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`),
-        port,
-        book: values.book,
-        language,
-        search: values.search,
-      },
+    return new PublishCommand(command, {
+      vault: path.resolve(values.vault),
+      out: path.resolve(values.out),
+      siteUrl: siteUrl === undefined ? undefined : new URL(siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`),
+      port,
+      book: values.book,
+      language,
+      search: values.search,
+    })
+  }
+
+  private async execute(): Promise<void> {
+    switch (this.command) {
+      case "build":
+        await this.build(this.options, false)
+        return
+      case "dev":
+        return this.dev()
+      case "serve":
+        await this.serve(this.options, this.routes(this.options).base)
+        return
+      case "pdf":
+        return this.pdf()
+      case "preamble":
+        return this.preamble()
     }
   }
 
-  private static read(options: Options): { vault: Vault; series: Series } {
-    const vault = Vault.open(options.vault)
+  private read(): { vault: Vault; series: Series } {
+    const vault = Vault.open(this.options.vault)
     return { vault, series: new SeriesReader(vault, new MarkdownParser()).read() }
   }
 
-  private static async build(options: Options, liveReload = false) {
+  private routes(options: Options): Routes {
+    return new Routes(options.siteUrl ?? this.read().series.settings.siteUrl)
+  }
+
+  private async build(options: Options, liveReload: boolean): Promise<void> {
     const started = performance.now()
-    const { vault, series } = PublishCommand.read(options)
+    const { vault, series } = this.read()
     const report = await new Site(vault, series, {
       out: options.out,
       siteUrl: options.siteUrl,
-      search: options.search,
+      search: options.search ? undefined : false,
       liveReload,
     }).build()
     const seconds = ((performance.now() - started) / 1000).toFixed(1)
     console.log(`Built ${report.pages} pages (${report.files} files) into ${options.out} in ${seconds}s.`)
-    return series
   }
 
-  private static async serve(options: Options, liveReload = false): Promise<PreviewServer> {
-    const index = path.join(options.out, "index.html")
-    if (!fs.existsSync(index))
+  private async serve(options: Options, base: string): Promise<PreviewServer> {
+    if (!fs.existsSync(path.join(options.out, "index.html"))) {
       throw new PublishError(`Nothing to serve in ${options.out}; run npm run build first.`)
-    const base = liveReload
-      ? "/"
-      : new Routes(options.siteUrl ?? PublishCommand.read(options).series.settings.siteUrl).base
+    }
     const server = new PreviewServer(options.out, base)
-    const url = await server.listen(options.port)
-    console.log(`Serving ${options.out} at ${url}`)
+    console.log(`Serving ${options.out} at ${await server.listen(options.port)}`)
     return server
   }
 
-  private static async dev(options: Options) {
-    const local = { ...options, siteUrl: new URL(`http://127.0.0.1:${options.port}/`) }
-    await PublishCommand.build(local, true)
-    const server = await PublishCommand.serve(local, true)
+  /** Keeps serving through broken intermediate states: every rebuild error is printed, none is fatal. */
+  private async dev(): Promise<void> {
+    const local: Options = { ...this.options, siteUrl: new URL(`http://127.0.0.1:${this.options.port}/`) }
+    await this.build(local, true)
+    const server = await this.serve(local, "/")
     const publishDir = path.dirname(fileURLToPath(import.meta.url))
     const watched = [
-      options.vault,
+      local.vault,
       path.join(publishDir, "site", "styles"),
       path.join(publishDir, "site", "client"),
     ]
     let timer: NodeJS.Timeout | undefined
-    let running = Promise.resolve()
+    let queue = Promise.resolve()
     const rebuild = () => {
-      running = running.then(async () => {
+      queue = queue.then(async () => {
         try {
-          await PublishCommand.build(local, true)
+          await this.build(local, true)
           server.reload()
         } catch (error) {
-          if (!(error instanceof PublishError)) throw error
-          console.error(`error: ${error.describe()}`)
+          console.error(`error: ${error instanceof PublishError ? error.describe() : String(error)}`)
         }
       })
     }
@@ -185,23 +194,28 @@ export class PublishCommand {
     await new Promise(() => undefined)
   }
 
-  private static async pdf(options: Options) {
-    const { vault, series } = PublishCommand.read(options)
+  private async pdf(): Promise<void> {
+    const { vault, series } = this.read()
+    const { book, language } = this.options
     const editions = series.books
-      .filter((book) => !options.book || book.slug === options.book)
-      .flatMap((book) => book.editions)
-      .filter((edition) => !options.language || edition.language === options.language)
+      .filter((item) => !book || item.slug === book)
+      .flatMap((item) => item.editions)
+      .filter((edition) => !language || edition.language === language)
     if (!editions.length)
-      throw new PublishError(
-        `No edition matches --book ${options.book ?? "*"} --lang ${options.language ?? "*"}.`,
-      )
-    const routes = new Routes(options.siteUrl ?? series.settings.siteUrl)
-    const folder = path.join(options.out, PDF_FOLDER)
+      throw new PublishError(`No edition matches --book ${book ?? "*"} --lang ${language ?? "*"}.`)
+    const routes = new Routes(this.options.siteUrl ?? series.settings.siteUrl)
     for (const edition of editions) {
-      const output = path.join(folder, routes.pdfName(edition))
+      const output = path.join(this.options.out, OUTPUT.pdf, routes.pdfName(edition))
       await new PdfBook(vault, series, edition, routes).write(output)
       console.log(`Wrote ${path.relative(process.cwd(), output)}`)
     }
+  }
+
+  private preamble(): void {
+    const { vault, series } = this.read()
+    const result = new ObsidianPreamble(series).write(vault)
+    for (const conflict of result.conflicts) console.warn(`warning: ${conflict}`)
+    console.log(`Wrote ${path.relative(process.cwd(), result.file)}`)
   }
 }
 

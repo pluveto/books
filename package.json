@@ -12,6 +12,7 @@
     "dev": "tsx publish/cli.ts dev",
     "serve": "tsx publish/cli.ts serve",
     "pdf": "tsx publish/cli.ts pdf",
+    "preamble": "tsx publish/cli.ts preamble",
     "check": "tsc --noEmit && eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "tsx --test \"tests/unit/**/*.test.ts\" \"tests/build/**/*.test.ts\" \"tests/pdf/**/*.test.ts\"",

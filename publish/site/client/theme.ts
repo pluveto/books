@@ -1,3 +1,4 @@
+import { STORAGE } from "../protocol.ts"
 import { storage } from "./storage.ts"
 
 type Theme = "light" | "dark"
@@ -14,13 +15,13 @@ export function initTheme() {
   for (const button of buttons) {
     button.addEventListener("click", () => {
       const next: Theme = root.dataset.theme === "dark" ? "light" : "dark"
-      storage.set("theme", next)
+      storage.set(STORAGE.theme, next)
       apply(next)
     })
   }
 
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
-    const saved = storage.get("theme")
+    const saved = storage.get(STORAGE.theme)
     if (saved !== "light" && saved !== "dark") apply(event.matches ? "dark" : "light")
   })
 }

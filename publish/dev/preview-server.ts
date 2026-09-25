@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import http from "node:http"
 import path from "node:path"
+import { RELOAD_PATH } from "../site/protocol.ts"
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -51,7 +52,7 @@ export class PreviewServer {
 
   private handle(request: http.IncomingMessage, response: http.ServerResponse) {
     const url = new URL(request.url ?? "/", "http://localhost")
-    if (url.pathname === "/__reload") return this.subscribe(response)
+    if (url.pathname === RELOAD_PATH) return this.subscribe(response)
     if (!url.pathname.startsWith(this.base)) {
       response.writeHead(302, { location: this.base }).end()
       return

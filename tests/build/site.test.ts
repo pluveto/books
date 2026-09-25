@@ -3,12 +3,14 @@ import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { before, test } from "node:test"
+import zlib from "node:zlib"
+import type { Element } from "hast"
 import { SeriesReader } from "../../publish/obsidian/series-reader.ts"
 import { Vault } from "../../publish/obsidian/vault.ts"
 import { MarkdownParser } from "../../publish/render/parser.ts"
 import { Site } from "../../publish/site/site.ts"
 import { tempDir } from "../support/fixture.ts"
-import { attribute, BuiltSite } from "../support/site-audit.ts"
+import { attribute, BuiltSite, type HtmlPage } from "../support/site-audit.ts"
 
 const VAULT = path.resolve(import.meta.dirname, "../../vault")
 const SITE_URL = new URL("https://books.example.org/books/")
@@ -19,8 +21,22 @@ async function build(out: string, search: boolean) {
   await new Site(vault, new SeriesReader(vault, new MarkdownParser()).read(), {
     out,
     siteUrl: SITE_URL,
-    search,
+    search: search ? undefined : false,
   }).build()
+}
+
+function head(page: HtmlPage) {
+  const all = (test: (node: Element) => boolean) => BuiltSite.elements(page.tree, test)
+  const meta = (key: string) =>
+    all(
+      (node) => node.tagName === "meta" && (attribute(node, "name") ?? attribute(node, "property")) === key,
+    ).map((node) => attribute(node, "content") ?? "")
+  const links = (rel: string) =>
+    all((node) => node.tagName === "link" && attribute(node, "rel") === rel).map((node) => ({
+      href: attribute(node, "href") ?? "",
+      hreflang: attribute(node, "hrefLang"),
+    }))
+  return { all, meta, links }
 }
 
 before(async () => {
@@ -74,52 +90,63 @@ test("every internal link, asset and fragment resolves", () => {
   assert.deepEqual(problems, [])
 })
 
-test("every page has a language, title, description and canonical URL", () => {
+test("indexable pages carry title, description, canonical and Open Graph tags; the rest are noindex", () => {
   for (const page of site.pages) {
-    const [html] = BuiltSite.elements(page.tree, (node) => node.tagName === "html")
+    const { all, meta, links } = head(page)
+    const [html] = all((node) => node.tagName === "html")
     assert.ok(html && attribute(html, "lang"), `${page.file} lacks lang`)
-    const [title] = BuiltSite.elements(page.tree, (node) => node.tagName === "title")
-    assert.ok(title && JSON.stringify(title.children).length > 20, `${page.file} lacks a title`)
-    const meta = (name: string) =>
-      BuiltSite.elements(page.tree, (node) => node.tagName === "meta" && attribute(node, "name") === name)[0]
-    assert.ok(attribute(meta("description") ?? html, "content"), `${page.file} lacks a description`)
-    const canonical = BuiltSite.elements(
-      page.tree,
-      (node) => node.tagName === "link" && attribute(node, "rel") === "canonical",
-    )[0]
-    if (page.file === "404.html") {
-      assert.equal(canonical, undefined)
-      assert.equal(attribute(meta("robots") ?? html, "content"), "noindex")
-    } else {
-      assert.equal(attribute(canonical ?? html, "href"), new URL(page.pathname, SITE_URL.origin).href)
+    assert.ok(all((node) => node.tagName === "title").length === 1, `${page.file} lacks a title`)
+    assert.ok(meta("description")[0], `${page.file} lacks a description`)
+    const canonical = links("canonical")
+    if (page.pathname === "/books/" || page.file === "404.html") {
+      assert.deepEqual(canonical, [], `${page.file} must not be canonical`)
+      assert.deepEqual(meta("robots"), ["noindex"], `${page.file} must be noindex`)
+      continue
+    }
+    const url = new URL(page.pathname, SITE_URL.origin).href
+    assert.equal(canonical[0]?.href, url, page.file)
+    assert.equal(meta("og:url")[0], url, page.file)
+    for (const key of ["og:title", "og:description", "og:locale", "og:site_name", "og:type"]) {
+      assert.ok(meta(key)[0], `${page.file} lacks ${key}`)
     }
   }
 })
 
-test("hreflang alternates are reciprocal and the language switch keeps the chapter", () => {
-  for (const page of site.pages.filter((page) => page.file.split("/").length === 4)) {
-    const alternates = BuiltSite.elements(
-      page.tree,
-      (node) => node.tagName === "link" && attribute(node, "rel") === "alternate",
-    ).map((node) => new URL(attribute(node, "href") ?? "").pathname)
-    assert.ok(alternates.includes(page.pathname), `${page.file} does not list itself`)
-    for (const other of alternates) {
+test("hreflang alternates of every indexable page are reciprocal", () => {
+  const alternates = (page: HtmlPage) =>
+    head(page)
+      .links("alternate")
+      .filter((link) => link.hreflang !== "x-default")
+      .map((link) => new URL(link.href).pathname)
+  for (const page of site.pages.filter((page) => head(page).links("canonical").length)) {
+    const own = alternates(page)
+    assert.ok(own.includes(page.pathname), `${page.file} does not list itself`)
+    for (const other of own) {
       const back = site.page(other)
       assert.ok(back, `${page.file} points at missing ${other}`)
-      const returned = BuiltSite.elements(
-        back.tree,
-        (node) => node.tagName === "link" && attribute(node, "rel") === "alternate",
-      ).map((node) => new URL(attribute(node, "href") ?? "").pathname)
-      assert.ok(returned.includes(page.pathname), `${other} does not point back at ${page.pathname}`)
+      assert.ok(alternates(back).includes(page.pathname), `${other} does not point back at ${page.pathname}`)
     }
+    const xDefault = head(page)
+      .links("alternate")
+      .filter((link) => link.hreflang === "x-default")
+    assert.equal(xDefault.length, 1, `${page.file} has one x-default`)
+    assert.match(
+      new URL(xDefault[0]?.href ?? "").pathname,
+      /^\/books\/zh\//,
+      `${page.file} defaults to Chinese`,
+    )
   }
+})
+
+test("the language switch keeps the chapter", () => {
   const zh = site.page("/books/zh/calculus/02/")
   assert.ok(zh)
-  const [switchLink] = BuiltSite.elements(
+  const [link] = BuiltSite.elements(
     zh.tree,
     (node) => node.tagName === "a" && attribute(node, "dataLanguage") === "en",
   )
-  assert.equal(attribute(switchLink ?? (zh.tree.children[0] as never), "href"), "/books/en/calculus/02/")
+  assert.ok(link)
+  assert.equal(attribute(link, "href"), "/books/en/calculus/02/")
 })
 
 test("formulas and code are finished at build time", () => {
@@ -139,23 +166,40 @@ test("sitemap, robots and search index are published", () => {
   const sitemap = fs.readFileSync(path.join(site.root, "sitemap.xml"), "utf8")
   assert.match(sitemap, /<loc>https:\/\/books\.example\.org\/books\/zh\/linear-algebra\/01\/<\/loc>/)
   assert.match(sitemap, /hreflang="en" href="https:\/\/books\.example\.org\/books\/en\/linear-algebra\/01\/"/)
-  assert.doesNotMatch(sitemap, /404\.html/)
+  assert.doesNotMatch(sitemap, /404\.html|<loc>https:\/\/books\.example\.org\/books\/<\/loc>/)
   const robots = fs.readFileSync(path.join(site.root, "robots.txt"), "utf8")
   assert.match(robots, /Sitemap: https:\/\/books\.example\.org\/books\/sitemap\.xml/)
   assert.ok(fs.existsSync(path.join(site.root, "pagefind", "pagefind-ui.js")))
-  const languages = fs.readdirSync(path.join(site.root, "pagefind", "index")).length
-  assert.ok(languages > 0)
+  const fragments = fs.readdirSync(path.join(site.root, "pagefind", "fragment"))
+  const urls = fragments.map((name) =>
+    zlib.gunzipSync(fs.readFileSync(path.join(site.root, "pagefind", "fragment", name))).toString("utf8"),
+  )
+  assert.ok(urls.length >= 18)
+  assert.ok(
+    urls.every((fragment) => /"url":"\/books\/(zh|en)\//.test(fragment)),
+    "search results link under the base path",
+  )
 })
 
-test("two builds of the same vault are byte-identical", async () => {
+test("two builds are byte-identical outside Pagefind, whose index is equivalent but not reproducible", async () => {
   const hash = (root: string) => {
     const digest = crypto.createHash("sha256")
-    for (const file of BuiltSite.walk(root))
+    for (const file of BuiltSite.walk(root).filter((file) => !file.startsWith("pagefind/"))) {
       digest.update(file).update(fs.readFileSync(path.join(root, file)))
+    }
     return digest.digest("hex")
   }
-  const [first, second] = [tempDir("books-a-"), tempDir("books-b-")]
-  await build(first, false)
-  await build(second, false)
-  assert.equal(hash(first), hash(second))
+  const languages = (root: string) => {
+    const entry = JSON.parse(fs.readFileSync(path.join(root, "pagefind", "pagefind-entry.json"), "utf8")) as {
+      languages: Record<string, { page_count: number }>
+    }
+    return Object.fromEntries(
+      Object.entries(entry.languages).map(([code, { page_count }]) => [code, page_count]),
+    )
+  }
+  const second = tempDir("books-again-")
+  await build(second, true)
+  assert.equal(hash(second), hash(site.root))
+  assert.deepEqual(languages(second), languages(site.root))
+  assert.deepEqual(languages(site.root), { en: 12, "zh-cn": 12 })
 })

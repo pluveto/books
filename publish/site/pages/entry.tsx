@@ -2,10 +2,12 @@ import type { LanguageCode } from "../../model/language.ts"
 import { BrandMark, SearchDialog, SiteFooter, SiteHeader } from "../components/chrome.tsx"
 import { messages } from "../../i18n.ts"
 import type { Page, PageHead, SiteContext } from "../page.ts"
+import { STORAGE } from "../protocol.ts"
 
 /**
  * The site root. With JavaScript it forwards to the reader's language (a saved choice
- * first, then the browser's preference); without, it is a plain language chooser.
+ * first, then the browser's preference); without, it is a plain language chooser. It is
+ * not indexed: the catalogs are the pages search engines should list.
  */
 export class GatePage implements Page {
   readonly bodyClass = "page-gate"
@@ -27,7 +29,7 @@ export class GatePage implements Page {
       description: text.tagline,
       type: "website",
       accent: this.site.series.settings.brand,
-      indexable: true,
+      indexable: false,
     }
   }
 
@@ -44,7 +46,7 @@ export class GatePage implements Page {
   body() {
     const { series, routes } = this.site
     const languages = JSON.stringify(series.languages)
-    const redirect = `(function(){var l=${languages},p;try{p=localStorage.getItem("language")}catch(e){}if(l.indexOf(p)<0){p=null;var n=navigator.languages||[navigator.language];for(var i=0;i<n.length&&!p;i++){var c=String(n[i]).toLowerCase().split("-")[0];if(l.indexOf(c)>=0)p=c}}location.replace(${JSON.stringify(routes.base)}+(p||l[0])+"/")})()`
+    const redirect = `(function(){var l=${languages},p;try{p=localStorage.getItem(${JSON.stringify(STORAGE.language)})}catch(e){}if(l.indexOf(p)<0){p=null;var n=navigator.languages||[navigator.language];for(var i=0;i<n.length&&!p;i++){var c=String(n[i]).toLowerCase().split("-")[0];if(l.indexOf(c)>=0)p=c}}location.replace(${JSON.stringify(routes.base)}+(p||l[0])+"/")})()`
     return (
       <main id="content" class="gate">
         <script dangerouslySetInnerHTML={{ __html: redirect }} />

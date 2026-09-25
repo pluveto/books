@@ -9,7 +9,7 @@ function escape(value: string): string {
 /** sitemap.xml with hreflang alternates, and a robots.txt pointing at it. */
 export function sitemap(pages: readonly Page[], routes: Routes): { xml: string; robots: string } {
   const entries = pages
-    .filter((page) => page.head.indexable && page.pathname !== routes.gate())
+    .filter((page) => page.head.indexable)
     .map((page) => {
       const alternates = [...page.translations()]
         .map(

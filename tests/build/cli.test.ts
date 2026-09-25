@@ -3,7 +3,15 @@ import fs from "node:fs"
 import path from "node:path"
 import { afterEach, beforeEach, test } from "node:test"
 import { PublishCommand } from "../../publish/cli.ts"
-import { BOOK_MD, makeVault, tempDir } from "../support/fixture.ts"
+import { Site } from "../../publish/site/site.ts"
+import { BOOK_MD, makeVault, readSeries, tempDir } from "../support/fixture.ts"
+import { BuiltSite } from "../support/site-audit.ts"
+
+function snapshot(root: string): Record<string, string> {
+  return Object.fromEntries(
+    BuiltSite.walk(root).map((file) => [file, fs.readFileSync(path.join(root, file)).toString("base64")]),
+  )
+}
 
 let errors: string[] = []
 const original = console.error
@@ -29,6 +37,31 @@ test("build writes the site and a content error exits 1 naming the file", async 
     fs.existsSync(path.join(out, "zh", "alpha", "01", "index.html")),
     "a failed build keeps the old site",
   )
+})
+
+test("build refuses to replace a folder it did not create", async () => {
+  const out = tempDir("books-foreign-")
+  fs.writeFileSync(path.join(out, "notes.txt"), "mine")
+  fs.mkdirSync(path.join(out, ".git"))
+  assert.equal(await PublishCommand.run(["build", "--vault", makeVault(), "--out", out, "--no-search"]), 1)
+  assert.match(errors.join("\n"), /Refusing to replace .*not created by this publisher/)
+  assert.deepEqual(fs.readdirSync(out).sort(), [".git", "notes.txt"])
+})
+
+test("a failure after rendering leaves the previous site byte-for-byte", async () => {
+  const out = tempDir("books-atomic-")
+  const { vault, series } = readSeries(makeVault())
+  await new Site(vault, series, { out, search: false }).build()
+  const before = snapshot(out)
+  await assert.rejects(
+    new Site(vault, series, {
+      out,
+      search: () => Promise.reject(new Error("index failed")),
+    }).build(),
+    /index failed/,
+  )
+  assert.deepEqual(snapshot(out), before)
+  assert.equal(fs.existsSync(path.join(path.dirname(out), `.${path.basename(out)}.staging`)), false)
 })
 
 test("usage errors exit 64", async () => {

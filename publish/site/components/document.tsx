@@ -2,10 +2,12 @@ import { renderToString } from "preact-render-to-string"
 import { AccentColor } from "../../model/accent.ts"
 import { messages } from "../../i18n.ts"
 import type { Page, SiteContext } from "../page.ts"
+import { RELOAD_PATH, STORAGE } from "../protocol.ts"
 
-const THEME_BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{var t=localStorage.getItem("theme")}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t})()`
+/** Runs before first paint so a saved theme never flashes the other one. */
+const THEME_BOOT = `(function(){var d=document.documentElement;d.classList.add("js");try{var t=localStorage.getItem(${JSON.stringify(STORAGE.theme)})}catch(e){}if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t})()`
 
-const LIVE_RELOAD = `new EventSource("/__reload").onmessage=function(){location.reload()}`
+const LIVE_RELOAD = `new EventSource(${JSON.stringify(RELOAD_PATH)}).onmessage=function(){location.reload()}`
 
 /** Inline custom properties; the stylesheet picks the light or dark one per theme. */
 export function accentStyle(accent: AccentColor): string {

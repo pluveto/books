@@ -25,10 +25,10 @@ export class WebLinks implements LinkTarget {
   }
 
   media(file: string): string {
-    return this.library.url(file)
+    return this.library.publish(file)
   }
 
   headingId(_chapter: Chapter, heading: Heading): string {
-    return heading.slug
+    return this.routes.headingId(heading)
   }
 }

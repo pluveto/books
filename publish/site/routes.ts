@@ -2,6 +2,7 @@ import type { Chapter } from "../model/chapter.ts"
 import type { Edition } from "../model/edition.ts"
 import type { LanguageCode } from "../model/language.ts"
 import type { Heading } from "../model/outline.ts"
+import { OUTPUT } from "./protocol.ts"
 
 /**
  * The site's URL scheme. Every internal link is an absolute path under the base path of
@@ -28,7 +29,12 @@ export class Routes {
 
   chapter(chapter: Chapter, heading?: Heading): string {
     const page = `${this.cover(chapter.edition)}${chapter.number}/`
-    return heading ? `${page}#${heading.slug}` : page
+    return heading ? `${page}#${this.headingId(heading)}` : page
+  }
+
+  /** The id a heading carries on its web page. */
+  headingId(heading: Heading): string {
+    return heading.slug
   }
 
   notFound(): string {
@@ -36,15 +42,15 @@ export class Routes {
   }
 
   asset(name: string): string {
-    return `${this.base}assets/${name}`
+    return `${this.base}${OUTPUT.assets}/${name}`
   }
 
   media(hash: string, name: string): string {
-    return `${this.base}media/${hash}/${encodeURIComponent(name)}`
+    return `${this.base}${OUTPUT.media}/${hash}/${encodeURIComponent(name)}`
   }
 
   pdf(edition: Edition): string {
-    return `${this.base}pdf/${this.pdfName(edition)}`
+    return `${this.base}${OUTPUT.pdf}/${this.pdfName(edition)}`
   }
 
   pdfName(edition: Edition): string {
@@ -52,7 +58,7 @@ export class Routes {
   }
 
   searchBundle(): string {
-    return `${this.base}pagefind/`
+    return `${this.base}${OUTPUT.search}/`
   }
 
   sitemap(): string {
