@@ -50,6 +50,6 @@ test("pdf without Pandoc or XeLaTeX exits 2 and leaves the site alone", async ()
   } finally {
     process.env.PATH = path_
   }
-  assert.match(errors.join("\n"), /Missing required tools: pandoc, xelatex/)
+  assert.match(errors.join("\n"), /Missing required tools: pandoc, xelatex, rsvg-convert/)
   assert.ok(fs.existsSync(path.join(out, "index.html")))
 })

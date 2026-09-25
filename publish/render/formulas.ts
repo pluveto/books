@@ -89,7 +89,7 @@ export function rehypeFormulaCheck() {
   }
 }
 
-/** For the PDF: hand Pandoc raw TeX in the spans its HTML reader treats as math. */
+/** For the PDF: raw TeX in `span.math`, which publish/pdf/obsidian.lua turns into Pandoc math. */
 export function rehypePandocMath() {
   return (tree: Root) => {
     visit(tree, "element", (node, index, parent) => {
@@ -103,7 +103,7 @@ export function rehypePandocMath() {
         type: "element",
         tagName: "span",
         properties: { className: ["math", kind] },
-        children: [{ type: "text", value: kind === "display" ? `\\[${tex}\\]` : `\\(${tex}\\)` }],
+        children: [{ type: "text", value: tex }],
       }
       return SKIP
     })

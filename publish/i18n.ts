@@ -1,7 +1,16 @@
 import type { BookStatus } from "./model/book.ts"
 import type { LanguageCode } from "./model/language.ts"
 
+/** How XeLaTeX typesets an edition in this language. */
+export interface Typesetting {
+  readonly documentClass: string
+  readonly classOptions: readonly string[]
+  /** Font family for CJK text, if the language needs one; BOOKS_CJK_FONT overrides it. */
+  readonly cjkFont?: string
+}
+
 export interface Messages {
+  readonly typesetting: Typesetting
   readonly htmlLang: string
   readonly ogLocale: string
   readonly languageName: string
@@ -41,6 +50,11 @@ export interface Messages {
 }
 
 const zh: Messages = {
+  typesetting: {
+    documentClass: "ctexbook",
+    classOptions: ["oneside", "fontset=none"],
+    cjkFont: "Noto Serif CJK SC",
+  },
   htmlLang: "zh-CN",
   ogLocale: "zh_CN",
   languageName: "中文",
@@ -79,6 +93,7 @@ const zh: Messages = {
 }
 
 const en: Messages = {
+  typesetting: { documentClass: "book", classOptions: ["oneside"] },
   htmlLang: "en",
   ogLocale: "en_US",
   languageName: "English",

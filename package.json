@@ -14,7 +14,7 @@
     "pdf": "tsx publish/cli.ts pdf",
     "check": "tsc --noEmit && eslint . && prettier --check .",
     "format": "prettier --write .",
-    "test": "tsx --test \"tests/unit/**/*.test.ts\" \"tests/build/**/*.test.ts\"",
+    "test": "tsx --test \"tests/unit/**/*.test.ts\" \"tests/build/**/*.test.ts\" \"tests/pdf/**/*.test.ts\"",
     "test:e2e": "playwright test"
   },
   "dependencies": {

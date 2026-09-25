@@ -7,3 +7,4 @@ texlive-lang-chinese
 lmodern
 fonts-noto-cjk
 librsvg2-bin
+poppler-utils

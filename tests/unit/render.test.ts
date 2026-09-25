@@ -106,8 +106,8 @@ test("highlights, comments, footnotes and tables follow Obsidian and GFM", async
 
 test("the PDF output leaves math as TeX for Pandoc", async () => {
   const html = await render("# 第二章\n\n$x$ 与\n\n$$\ny\n$$\n", "pdf")
-  assert.match(html, /<span class="math inline">\\\(x\\\)<\/span>/)
-  assert.match(html, /<span class="math display">\\\[y\\\]<\/span>/)
+  assert.match(html, /<span class="math inline">x<\/span>/)
+  assert.match(html, /<span class="math display">y<\/span>/)
   assert.doesNotMatch(html, /mjx-container/)
 })
 
