@@ -1,0 +1,6 @@
+{
+  "semi": false,
+  "printWidth": 110,
+  "trailingComma": "all",
+  "overrides": [{ "files": "*.md", "options": { "proseWrap": "preserve" } }]
+}

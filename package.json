@@ -1,0 +1,57 @@
+{
+  "name": "books",
+  "private": true,
+  "type": "module",
+  "description": "A series of open textbooks written in Obsidian and published with Quartz plugins.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsx publish/cli.ts build",
+    "dev": "tsx publish/cli.ts dev",
+    "serve": "tsx publish/cli.ts serve",
+    "pdf": "tsx publish/cli.ts pdf",
+    "check": "tsc --noEmit && eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "tsx --test \"tests/unit/**/*.test.ts\" \"tests/build/**/*.test.ts\"",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@myriaddreamin/rehype-typst": "^0.7.0",
+    "@quartz-community/latex": "^1.0.0",
+    "@quartz-community/obsidian-flavored-markdown": "^1.0.0",
+    "@quartz-community/syntax-highlighting": "^1.0.1",
+    "@quartz-community/types": "^1.0.0",
+    "esbuild": "^0.28.2",
+    "github-slugger": "^2.0.0",
+    "hast-util-to-html": "^9.0.5",
+    "hast-util-to-string": "^3.0.1",
+    "mdast-util-to-string": "^4.0.0",
+    "pagefind": "^1.5.2",
+    "preact": "^10.29.8",
+    "preact-render-to-string": "^6.7.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "shiki": "^4.4.3",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "vfile": "^6.0.3",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/hast": "^3.0.5",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.20.4",
+    "eslint": "^10.11.0",
+    "hast-util-from-html": "^2.0.3",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1"
+  }
+}
