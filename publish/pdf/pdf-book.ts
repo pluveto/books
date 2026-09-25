@@ -15,6 +15,7 @@ import type { Vault } from "../obsidian/vault.ts"
 import { ChapterRenderer } from "../render/renderer.ts"
 import type { LinkTarget } from "../render/scope.ts"
 import type { Routes } from "../site/routes.ts"
+import { typesetting } from "./typesetting.ts"
 
 const FILTER = path.join(path.dirname(fileURLToPath(import.meta.url)), "obsidian.lua")
 
@@ -114,18 +115,20 @@ export class PdfBook {
 
   private writerArguments(header: string): string[] {
     const text = this.series.text(this.edition.language)
-    const { typesetting, htmlLang } = messages(this.edition.language)
+    const { htmlLang } = messages(this.edition.language)
+    const setting = typesetting(this.edition.language)
     const args = [
       "--pdf-engine=xelatex",
       "--top-level-division=chapter",
+      "--number-sections",
       "--toc",
       `--include-in-header=${header}`,
       `--metadata=title:${this.edition.title}`,
       `--metadata=subtitle:${this.edition.text.subtitle}`,
       `--metadata=author:${text.author ?? text.title}`,
       `--metadata=lang:${htmlLang}`,
-      `--variable=documentclass:${typesetting.documentClass}`,
-      `--variable=classoption:${typesetting.classOptions.join(",")}`,
+      `--variable=documentclass:${setting.documentClass}`,
+      `--variable=classoption:${setting.classOptions.join(",")}`,
       "--variable=geometry:margin=2.5cm",
       "--variable=colorlinks:true",
       "--variable=linkcolor:black",
@@ -137,7 +140,7 @@ export class PdfBook {
   }
 
   private cjkFont(): string | undefined {
-    const { cjkFont } = messages(this.edition.language).typesetting
+    const { cjkFont } = typesetting(this.edition.language)
     return cjkFont ? (process.env.BOOKS_CJK_FONT ?? cjkFont) : undefined
   }
 

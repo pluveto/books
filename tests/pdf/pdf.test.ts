@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import path from "node:path"
 import test from "node:test"
+import type { LanguageCode } from "../../publish/model/language.ts"
 import { SeriesReader } from "../../publish/obsidian/series-reader.ts"
 import { Vault } from "../../publish/obsidian/vault.ts"
 import { PdfBook } from "../../publish/pdf/pdf-book.ts"
@@ -18,12 +19,17 @@ function has(tool: string): boolean {
   return result.error === undefined && result.status === 0
 }
 
-function book(slug: string, language: "zh" | "en") {
+function editions() {
   const vault = Vault.open(VAULT)
   const series = new SeriesReader(vault, new MarkdownParser()).read()
-  const edition = series.books.find((item) => item.slug === slug)?.edition(language)
-  assert.ok(edition)
-  return new PdfBook(vault, series, edition, new Routes(series.settings.siteUrl))
+  const routes = new Routes(series.settings.siteUrl)
+  return series.books.flatMap((book) =>
+    book.editions.map((edition) => ({
+      name: `${book.slug}.${edition.language}`,
+      language: edition.language,
+      pdf: new PdfBook(vault, series, edition, routes),
+    })),
+  )
 }
 
 interface PandocNode {
@@ -44,7 +50,9 @@ test(
   "Pandoc reads formulas as math and footnotes as notes",
   { skip: !REQUIRED && !has("pandoc") && "needs pandoc" },
   async () => {
-    const nodes = collect(await book("linear-algebra", "zh").inspect())
+    const [linearAlgebra] = editions()
+    assert.ok(linearAlgebra)
+    const nodes = collect(await linearAlgebra.pdf.inspect())
     const math = nodes.filter((node) => node.t === "Math")
     assert.ok(math.length > 10, `expected formulas, got ${math.length}`)
     assert.ok(
@@ -65,25 +73,29 @@ test(
 )
 
 const fullChain = ["pandoc", "xelatex", "rsvg-convert", "pdftotext"].every(has)
+const LABELS: Record<LanguageCode, RegExp> = { zh: /第\s*一\s*章/, en: /Chapter\s*1/ }
 
 test(
-  "a typeset PDF contains no TeX source",
-  {
-    skip: !REQUIRED && !fullChain && "needs pandoc, xelatex, rsvg-convert and pdftotext",
-  },
+  "every edition typesets to a PDF with chapter labels and no TeX source",
+  { skip: !REQUIRED && !fullChain && "needs pandoc, xelatex, rsvg-convert and pdftotext" },
   async () => {
-    for (const [slug, language] of [
-      ["linear-algebra", "zh"],
-      ["probability", "en"],
-    ] as const) {
-      const output = path.join(tempDir("books-pdf-test-"), "book.pdf")
-      await book(slug, language).write(output)
-      const text = spawnSync("pdftotext", ["-enc", "UTF-8", output, "-"], { encoding: "utf8" }).stdout
-      assert.ok(text.length > 1000, `${slug}.${language}: the PDF has text`)
-      for (const leak of ["\\(", "\\[", "\\R", "\\norm", "\\mathbb", "\\P(", "↩"]) {
-        assert.equal(text.includes(leak), false, `${slug}.${language}: found ${leak}`)
+    const problems: string[] = []
+    for (const { name, language, pdf } of editions()) {
+      const output = path.join(tempDir("books-pdf-test-"), `${name}.pdf`)
+      try {
+        await pdf.write(output)
+      } catch (error) {
+        problems.push(`${name}: ${String(error)}`)
+        continue
       }
-      if (language === "zh") assert.match(text, /第\s*(1|一)\s*章/)
+      const text = spawnSync("pdftotext", ["-enc", "UTF-8", output, "-"], { encoding: "utf8" }).stdout
+      if (text.length < 1000) problems.push(`${name}: the PDF has almost no text`)
+      for (const leak of ["\\(", "\\[", "\\R", "\\norm", "\\mathbb", "\\P(", "↩"]) {
+        if (text.includes(leak)) problems.push(`${name}: found ${leak}`)
+      }
+      if (!LABELS[language].test(text))
+        problems.push(`${name}: no "${String(LABELS[language])}" chapter label`)
     }
+    assert.deepEqual(problems, [])
   },
 )
