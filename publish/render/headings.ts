@@ -29,7 +29,10 @@ export function remarkHeadingIds() {
   }
 }
 
-/** A hover anchor after each section heading, as on the original site. */
+/**
+ * A hover anchor after each section heading. It stays out of the tab order and the
+ * accessibility tree; the sidebar is the keyboard route to sections.
+ */
 export function rehypeHeadingAnchors() {
   return (tree: HastRoot) => {
     visit(tree, "element", (node: Element) => {

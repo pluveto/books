@@ -44,10 +44,11 @@ export class AccentColor {
   }
 
   private luminance(): number {
-    const linear = this.rgb.map((c) => {
-      const s = c / 255
+    const linear = (channel: number) => {
+      const s = channel / 255
       return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-    }) as unknown as Rgb
-    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+    }
+    const [r, g, b] = this.rgb
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
   }
 }

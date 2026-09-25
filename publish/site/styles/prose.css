@@ -84,8 +84,7 @@
   transition: opacity 0.15s;
 }
 
-.prose :is(h2, h3, h4):hover .heading-anchor,
-.heading-anchor:focus {
+.prose :is(h2, h3, h4):hover .heading-anchor {
   opacity: 0.8;
 }
 

@@ -6,25 +6,10 @@ import type { PluggableList } from "unified"
 import type { MacroSet } from "../model/macro-set.ts"
 
 /**
- * The transformer plugins only read `buildId`, `argv` and `cfg.configuration`; the rest
- * of Quartz's build context belongs to its emitters, which this publisher does not use.
+ * None of the three plugins reads the build context, which belongs to Quartz's own build.
+ * Recheck their `textTransform`, `markdownPlugins` and `htmlPlugins` when upgrading them.
  */
-const context = {
-  buildId: "books",
-  argv: {
-    directory: "vault",
-    verbose: false,
-    output: "dist",
-    serve: false,
-    watch: false,
-    port: 0,
-    wsPort: 0,
-  },
-  cfg: { configuration: { locale: "en-US" } },
-  allSlugs: [],
-  allFiles: [],
-  incremental: false,
-} as unknown as BuildCtx
+const context = {} as BuildCtx
 
 /** Quartz's transformer stages for one book: text, Markdown AST, then HTML AST. */
 export class QuartzTransformers {
