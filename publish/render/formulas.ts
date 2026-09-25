@@ -89,7 +89,10 @@ export function rehypeFormulaCheck() {
   }
 }
 
-/** For the PDF: raw TeX in `span.math`, which publish/pdf/obsidian.lua turns into Pandoc math. */
+/**
+ * For the PDF: `span.math` with the TeX in `data-tex`, which publish/pdf/obsidian.lua turns
+ * into Pandoc math. An attribute, unlike text, is not rewritten by Pandoc's smart quotes.
+ */
 export function rehypePandocMath() {
   return (tree: Root) => {
     visit(tree, "element", (node, index, parent) => {
@@ -102,8 +105,8 @@ export function rehypePandocMath() {
       parent.children[index] = {
         type: "element",
         tagName: "span",
-        properties: { className: ["math", kind] },
-        children: [{ type: "text", value: tex }],
+        properties: { className: ["math", kind], dataTex: tex },
+        children: [],
       }
       return SKIP
     })

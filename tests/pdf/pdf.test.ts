@@ -50,8 +50,15 @@ test(
   "Pandoc reads formulas as math and footnotes as notes",
   { skip: !REQUIRED && !has("pandoc") && "needs pandoc" },
   async () => {
-    const [linearAlgebra] = editions()
-    assert.ok(linearAlgebra)
+    const all = editions()
+    const linearAlgebra = all.find((edition) => edition.name === "linear-algebra.zh")
+    const calculus = all.find((edition) => edition.name === "calculus.en")
+    assert.ok(linearAlgebra && calculus)
+    const calculusMath = collect(await calculus.pdf.inspect()).filter((node) => node.t === "Math")
+    assert.ok(
+      calculusMath.some((node) => JSON.stringify(node.c).includes("f'(a)")),
+      "smart punctuation leaves formulas alone",
+    )
     const nodes = collect(await linearAlgebra.pdf.inspect())
     const math = nodes.filter((node) => node.t === "Math")
     assert.ok(math.length > 10, `expected formulas, got ${math.length}`)
@@ -73,7 +80,7 @@ test(
 )
 
 const fullChain = ["pandoc", "xelatex", "rsvg-convert", "pdftotext"].every(has)
-const LABELS: Record<LanguageCode, RegExp> = { zh: /第\s*一\s*章/, en: /Chapter\s*1/ }
+const LABELS: Record<LanguageCode, RegExp> = { zh: /第\s*1\s*章/, en: /Chapter\s*1/ }
 
 test(
   "every edition typesets to a PDF with chapter labels and no TeX source",
@@ -97,6 +104,9 @@ test(
         problems.push(`${name}: no "${String(LABELS[language])}" chapter label`)
       }
       if (/^0\.\d/m.test(text)) problems.push(`${name}: the preface has numbered sections`)
+      if (name.startsWith("calculus.") && !text.includes("≈"))
+        problems.push(`${name}: ≈ in the code sample is missing`)
+      if (/[\u2019\u2018](\(|a\))/.test(text)) problems.push(`${name}: a prime was set as a quotation mark`)
     }
     assert.deepEqual(problems, [])
   },

@@ -124,8 +124,8 @@ test("same-page Markdown fragments must name a heading", async () => {
 
 test("the PDF output leaves math as TeX for Pandoc", async () => {
   const html = await render("# 第二章\n\n$x$ 与\n\n$$\ny\n$$\n", "pdf")
-  assert.match(html, /<span class="math inline">x<\/span>/)
-  assert.match(html, /<span class="math display">y<\/span>/)
+  assert.match(html, /<span class="math inline" data-tex="x"><\/span>/)
+  assert.match(html, /<span class="math display" data-tex="y"><\/span>/)
   assert.doesNotMatch(html, /mjx-container/)
 })
 

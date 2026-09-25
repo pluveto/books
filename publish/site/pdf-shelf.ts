@@ -1,8 +1,11 @@
 import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import type { Edition } from "../model/edition.ts"
 import type { Vault } from "../obsidian/vault.ts"
+
+const PDF_CODE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "pdf")
 
 interface Entry {
   readonly file: string
@@ -33,15 +36,23 @@ export class PdfShelf {
     return new PdfShelf(folder, entries)
   }
 
-  /** Every file that went into the edition: its chapters, its book.md and cover. */
+  /**
+   * Everything that shapes the edition's PDF: series.md, every file of the book except its
+   * other languages' folders, and the publisher's own PDF code.
+   */
   static fingerprint(vault: Vault, edition: Edition): string {
+    const others = edition.book.editions
+      .filter((other) => other !== edition)
+      .map((other) => `${other.folder}/`)
+    const inBook = vault
+      .filesUnder(edition.book.slug)
+      .filter((file) => !others.some((prefix) => file.startsWith(prefix)))
     const hash = crypto.createHash("sha256")
-    const files = [
-      `${edition.book.slug}/book.md`,
-      edition.book.cover,
-      ...edition.chapters.map((chapter) => chapter.file),
-    ]
-    for (const file of files) hash.update(file).update(fs.readFileSync(vault.absolute(file)))
+    for (const file of ["series.md", ...inBook])
+      hash.update(file).update(fs.readFileSync(vault.absolute(file)))
+    for (const name of fs.readdirSync(PDF_CODE).sort()) {
+      hash.update(name).update(fs.readFileSync(path.join(PDF_CODE, name)))
+    }
     return hash.digest("hex")
   }
 

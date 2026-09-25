@@ -6,5 +6,6 @@ texlive-fonts-recommended
 texlive-lang-chinese
 lmodern
 fonts-noto-cjk
+fonts-dejavu-core
 librsvg2-bin
 poppler-utils

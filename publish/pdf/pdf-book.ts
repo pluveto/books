@@ -15,7 +15,7 @@ import type { Vault } from "../obsidian/vault.ts"
 import { ChapterRenderer } from "../render/renderer.ts"
 import type { LinkTarget } from "../render/scope.ts"
 import type { Routes } from "../site/routes.ts"
-import { typesetting } from "./typesetting.ts"
+import { MONO_FONT, typesetting } from "./typesetting.ts"
 
 const FILTER = path.join(path.dirname(fileURLToPath(import.meta.url)), "obsidian.lua")
 
@@ -64,7 +64,7 @@ export class PdfBook {
 
   async write(output: string): Promise<void> {
     PdfBook.require(["pandoc", "xelatex", "rsvg-convert"])
-    this.requireFont()
+    this.requireFonts()
     await this.withInput((input, header) => {
       fs.mkdirSync(path.dirname(output), { recursive: true })
       this.pandoc([...this.readerArguments(), ...this.writerArguments(header), input, "-o", output])
@@ -102,7 +102,8 @@ export class PdfBook {
       const input = path.join(work, "book.html")
       const header = path.join(work, "header.tex")
       fs.writeFileSync(input, await this.html(), "utf8")
-      fs.writeFileSync(header, `\\usepackage{amsmath,amssymb}\n${this.edition.book.macros.tex}\n`, "utf8")
+      const preamble = ["\\usepackage{amsmath,amssymb}", this.edition.book.macros.tex, this.setting.preamble]
+      fs.writeFileSync(header, `${preamble.filter(Boolean).join("\n")}\n`, "utf8")
       use(input, header)
     } finally {
       fs.rmSync(work, { recursive: true, force: true })
@@ -116,7 +117,7 @@ export class PdfBook {
   private writerArguments(header: string): string[] {
     const text = this.series.text(this.edition.language)
     const { htmlLang } = messages(this.edition.language)
-    const setting = typesetting(this.edition.language)
+    const setting = this.setting
     const args = [
       "--pdf-engine=xelatex",
       "--top-level-division=chapter",
@@ -133,26 +134,46 @@ export class PdfBook {
       "--variable=colorlinks:true",
       "--variable=linkcolor:black",
       "--variable=urlcolor:black",
+      `--variable=monofont:${this.monoFont}`,
     ]
     const font = this.cjkFont()
     if (font) args.push(`--variable=CJKmainfont:${font}`)
     return args
   }
 
+  private get setting() {
+    return typesetting(this.edition.language)
+  }
+
+  private get monoFont(): string {
+    return process.env.BOOKS_MONO_FONT ?? MONO_FONT
+  }
+
   private cjkFont(): string | undefined {
-    const { cjkFont } = typesetting(this.edition.language)
+    const { cjkFont } = this.setting
     return cjkFont ? (process.env.BOOKS_CJK_FONT ?? cjkFont) : undefined
   }
 
-  /** Where fontconfig exists, a missing CJK font is reported up front instead of by XeLaTeX. */
-  private requireFont() {
-    const font = this.cjkFont()
-    if (!font) return
-    const list = spawnSync("fc-list", [`:family=${font}`, "family"], { encoding: "utf8", windowsHide: true })
-    if (list.error || list.status !== 0) return
-    if (!list.stdout.trim()) throw new MissingToolError([`font "${font}" (or set BOOKS_CJK_FONT)`])
+  /** Where fontconfig exists, a missing font is reported up front instead of by XeLaTeX. */
+  private requireFonts() {
+    const fonts = [
+      { family: this.cjkFont(), variable: "BOOKS_CJK_FONT" },
+      { family: this.monoFont, variable: "BOOKS_MONO_FONT" },
+    ]
+    const missing: string[] = []
+    for (const { family, variable } of fonts) {
+      if (!family) continue
+      const list = spawnSync("fc-list", [`:family=${family}`, "family"], {
+        encoding: "utf8",
+        windowsHide: true,
+      })
+      if (list.error || list.status !== 0) return
+      if (!list.stdout.trim()) missing.push(`font "${family}" (or set ${variable})`)
+    }
+    if (missing.length) throw new MissingToolError(missing)
   }
 
+  /** Runs Pandoc; a glyph XeLaTeX could not find fails the build instead of vanishing. */
   private pandoc(args: string[]): string {
     const result = spawnSync("pandoc", args, {
       encoding: "utf8",
@@ -161,6 +182,12 @@ export class PdfBook {
     })
     if (result.status !== 0) {
       throw new PublishError(`Pandoc failed for ${this.edition.folder}:\n${result.stderr || result.stdout}`)
+    }
+    const missing = result.stderr.split("\n").filter((line) => line.includes("Missing character"))
+    if (missing.length) {
+      throw new PublishError(
+        `${this.edition.folder}: fonts lack characters the book uses:\n${missing.join("\n")}`,
+      )
     }
     return result.stdout
   }

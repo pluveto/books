@@ -18,7 +18,7 @@ local math = {
       return nil
     end
     local kind = has_class(span, "display") and "DisplayMath" or "InlineMath"
-    return pandoc.Math(kind, pandoc.utils.stringify(span))
+    return pandoc.Math(kind, span.attributes.tex or "")
   end,
 }
 
