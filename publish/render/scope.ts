@@ -16,7 +16,11 @@ export interface LinkTarget {
   headingId(chapter: Chapter, heading: Heading): string
 }
 
-/** Everything a render plugin needs to know about the chapter being rendered. */
+/**
+ * Everything a render plugin needs to know about the chapter being rendered. Processors
+ * are frozen once per edition (MathJax setup is expensive), so per-chapter state travels
+ * on the VFile, the one channel unified gives plugins at run time.
+ */
 export class RenderScope {
   constructor(
     readonly series: Series,
