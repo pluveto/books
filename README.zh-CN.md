@@ -19,7 +19,7 @@ npm run dev      # 构建并在 http://127.0.0.1:4173/ 预览，保存即重建
 npm run build    # 生成 dist/
 ```
 
-PDF 是可选的，需要 [Pandoc](https://pandoc.org/)、XeLaTeX（中文需要 `ctex`）、`rsvg-convert` 和 _Noto Serif CJK SC_ 字体（可用环境变量 `BOOKS_CJK_FONT` 换字体）；Ubuntu 上要装的包列在 `.github/pdf-packages.txt`：
+PDF 是可选的，需要 [Pandoc](https://pandoc.org/)、XeLaTeX（中文需要 `ctex`）、`rsvg-convert`，以及 _Noto Serif CJK SC_ 和 _DejaVu Sans Mono_ 两种字体（可用 `BOOKS_CJK_FONT`、`BOOKS_MONO_FONT` 替换）；Ubuntu 上要装的包列在 `.github/pdf-packages.txt`。字体印不出的字符会让构建失败。
 
 ```sh
 npm run pdf                                  # 所有版本，输出到 dist/pdf/

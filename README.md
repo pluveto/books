@@ -19,7 +19,7 @@ npm run dev      # build, serve at http://127.0.0.1:4173/ and rebuild on every s
 npm run build    # write the site to dist/
 ```
 
-PDFs are optional and need [Pandoc](https://pandoc.org/), XeLaTeX (with `ctex` for Chinese), `rsvg-convert` and the _Noto Serif CJK SC_ font (set `BOOKS_CJK_FONT` to use another); `.github/pdf-packages.txt` lists the Ubuntu packages:
+PDFs are optional and need [Pandoc](https://pandoc.org/), XeLaTeX (with `ctex` for Chinese), `rsvg-convert` and the fonts _Noto Serif CJK SC_ and _DejaVu Sans Mono_ (override with `BOOKS_CJK_FONT` and `BOOKS_MONO_FONT`); `.github/pdf-packages.txt` lists the Ubuntu packages. A character the fonts cannot print fails the build.
 
 ```sh
 npm run pdf                                  # every edition, into dist/pdf/
