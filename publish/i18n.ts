@@ -28,8 +28,6 @@ export interface Messages {
   readonly commentsUnavailable: string
   readonly copy: string
   readonly copied: string
-  readonly builtWith: string
-  readonly layoutCredit: string
   readonly frontMatter: string
   readonly footnotes: string
   /** Titles of callouts written without one, by Obsidian callout type. */
@@ -72,8 +70,6 @@ const zh: Messages = {
   commentsUnavailable: "评论区没有加载成功，你也可以直接到 GitHub Discussions 参与讨论。",
   copy: "复制",
   copied: "已复制",
-  builtWith: "使用 Quartz 插件构建",
-  layoutCredit: "版式源自欧长坤《现代 C++ 教程》",
   frontMatter: "前言",
   footnotes: "脚注",
   calloutTitles: {
@@ -133,8 +129,6 @@ const en: Messages = {
     "The comment section could not be loaded; you can also join the discussion on GitHub Discussions.",
   copy: "Copy",
   copied: "Copied",
-  builtWith: "Built with Quartz plugins",
-  layoutCredit: "Layout adapted from Changkun Ou's Modern C++ Tutorial",
   frontMatter: "Preface",
   footnotes: "Footnotes",
   calloutTitles: {

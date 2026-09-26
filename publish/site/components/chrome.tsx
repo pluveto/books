@@ -122,17 +122,6 @@ export function SiteFooter({ language, site }: { language: LanguageCode; site: S
           <a href={settings.codeLicense.url}>{settings.codeLicense.name}</a>
           {after}
         </p>
-        <p class="site-footer-credits">
-          {settings.repository && (
-            <>
-              <a href={settings.repository}>{text.sourceCode}</a>
-              <span aria-hidden="true"> · </span>
-            </>
-          )}
-          <a href="https://quartz.jzhao.xyz/">{text.builtWith}</a>
-          <span aria-hidden="true"> · </span>
-          <a href="https://github.com/changkun/modern-cpp-tutorial">{text.layoutCredit}</a>
-        </p>
       </div>
     </footer>
   )
