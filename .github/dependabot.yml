@@ -34,6 +34,13 @@ updates:
         patterns:
           - "@playwright/*"
           - "@axe-core/*"
+      types:
+        patterns:
+          - "@types/*"
+    ignore:
+      # @types/node tracks the runtime in "engines", so a major bump is a deliberate move.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
