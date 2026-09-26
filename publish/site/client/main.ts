@@ -1,5 +1,6 @@
 import { initCallouts } from "./callouts.ts"
 import { initCodeCopy } from "./code-copy.ts"
+import { initComments } from "./comments.ts"
 import { initLanguageMemory } from "./language.ts"
 import { initScrollSpy } from "./scroll-spy.ts"
 import { initSearch } from "./search.ts"
@@ -13,3 +14,4 @@ initCodeCopy()
 initCallouts()
 initSearch()
 initLanguageMemory()
+initComments()

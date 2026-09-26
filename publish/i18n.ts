@@ -23,6 +23,9 @@ export interface Messages {
   readonly previous: string
   readonly next: string
   readonly editPage: string
+  readonly comments: string
+  /** Shown in place of the comment widget while it loads, and if it never does. */
+  readonly commentsUnavailable: string
   readonly copy: string
   readonly copied: string
   readonly builtWith: string
@@ -65,6 +68,8 @@ const zh: Messages = {
   previous: "上一章",
   next: "下一章",
   editPage: "在 GitHub 上编辑此页",
+  comments: "评论",
+  commentsUnavailable: "评论区没有加载成功，你也可以直接到 GitHub Discussions 参与讨论。",
   copy: "复制",
   copied: "已复制",
   builtWith: "使用 Quartz 插件构建",
@@ -123,6 +128,9 @@ const en: Messages = {
   previous: "Previous",
   next: "Next",
   editPage: "Edit this page on GitHub",
+  comments: "Comments",
+  commentsUnavailable:
+    "The comment section could not be loaded; you can also join the discussion on GitHub Discussions.",
   copy: "Copy",
   copied: "Copied",
   builtWith: "Built with Quartz plugins",

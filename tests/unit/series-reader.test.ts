@@ -3,6 +3,13 @@ import test from "node:test"
 import { PublishError } from "../../publish/errors.ts"
 import { BOOK_MD, makeVault, readSeries, SERIES_MD } from "../support/fixture.ts"
 
+const COMMENTS = `comments:
+  repo: example/books
+  repo_id: R_example
+  category: Announcements
+  category_id: DIC_example
+`
+
 function rejects(files: Record<string, string | null>, message: RegExp, where?: string) {
   assert.throws(
     () => readSeries(makeVault(files)),
@@ -60,6 +67,21 @@ test("book.md problems are caught before anything is written", () => {
   rejects({ "alpha/en/00-preface.md": null, "alpha/en/01-first.md": null }, /"en" section but no alpha\/en\//)
   rejects({ "alpha/fr/01-un.md": "# Un\n" }, /"fr" is not a language/)
   rejects({ "alpha/stray.md": "# Stray\n" }, /language folder/, "vault/alpha/stray.md")
+})
+
+test("comments are optional, and a configured thread names a repository and a category", () => {
+  assert.equal(readSeries(makeVault()).series.settings.comments, undefined)
+  const { series } = readSeries(makeVault({ "series.md": SERIES_MD.replace("zh:\n", `${COMMENTS}zh:\n`) }))
+  assert.deepEqual(series.settings.comments, {
+    repo: "example/books",
+    repoId: "R_example",
+    category: "Announcements",
+    categoryId: "DIC_example",
+  })
+  const broken = (block: string) => ({ "series.md": SERIES_MD.replace("zh:\n", `${block}zh:\n`) })
+  rejects(broken(COMMENTS.replace("example/books", "books")), /"repo" must look like "owner\/name"/)
+  rejects(broken(COMMENTS.replace("  repo_id: R_example\n", "")), /"comments.repo_id" is required/)
+  rejects(broken(COMMENTS.replace("  category:", "  catgory:")), /did you mean "comments.category"\?/)
 })
 
 test("frontmatter problems point at the key's line and suggest the intended key", () => {

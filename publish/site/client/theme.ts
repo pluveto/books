@@ -1,4 +1,4 @@
-import { STORAGE } from "../../protocol.ts"
+import { STORAGE, THEME_EVENT } from "../../protocol.ts"
 import { storage } from "./storage.ts"
 
 type Theme = "light" | "dark"
@@ -9,6 +9,7 @@ export function initTheme() {
   const apply = (theme: Theme) => {
     root.dataset.theme = theme
     for (const button of buttons) button.setAttribute("aria-pressed", String(theme === "dark"))
+    document.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: theme }))
   }
   apply(root.dataset.theme === "dark" ? "dark" : "light")
 

@@ -9,6 +9,14 @@ export interface License {
   readonly url: string
 }
 
+/** giscus settings: chapter comments are GitHub Discussions in `repo`, one per chapter path. */
+export interface Comments {
+  readonly repo: string
+  readonly repoId: string
+  readonly category: string
+  readonly categoryId: string
+}
+
 export interface SeriesSettings {
   /** Canonical public URL of the site root, always ending with a slash. */
   readonly siteUrl: URL
@@ -18,6 +26,8 @@ export interface SeriesSettings {
   readonly brand: AccentColor
   readonly textLicense: License
   readonly codeLicense: License
+  /** Undefined when the series publishes without a comment section. */
+  readonly comments: Comments | undefined
 }
 
 export interface SeriesText {

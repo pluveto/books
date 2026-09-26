@@ -15,3 +15,11 @@ export const STORAGE = {
 } as const
 
 export const RELOAD_PATH = "/__reload"
+
+/** Fired on `document` whenever the theme changes, so late-loading widgets can follow it. */
+export const THEME_EVENT = "books:theme"
+
+export const GISCUS = {
+  origin: "https://giscus.app",
+  script: "https://giscus.app/client.js",
+} as const

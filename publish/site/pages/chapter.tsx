@@ -2,6 +2,7 @@ import type { Chapter } from "../../model/chapter.ts"
 import type { LanguageCode } from "../../model/language.ts"
 import { chapterLabel, Sidebar } from "../components/book.tsx"
 import { SearchDialog, SiteFooter, SiteHeader } from "../components/chrome.tsx"
+import { Comments } from "../components/comments.tsx"
 import { Icon } from "../components/icon.tsx"
 import { messages } from "../../i18n.ts"
 import type { Page, PageHead, SiteContext } from "../page.ts"
@@ -113,6 +114,7 @@ export class ChapterPage implements Page {
                 )}
               </nav>
             </footer>
+            <Comments chapter={chapter} site={site} />
           </main>
         </div>
         <SiteFooter language={this.language} site={site} />

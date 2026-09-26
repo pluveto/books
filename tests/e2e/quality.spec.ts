@@ -41,13 +41,27 @@ for (const path of PAGES) {
   })
 }
 
-test("the site requests nothing from other origins", async ({ page }) => {
+test("reading a page requests nothing from other origins", async ({ page }) => {
   const foreign: string[] = []
   page.on("request", (request) => {
     if (!request.url().startsWith("http://127.0.0.1")) foreign.push(request.url())
   })
   for (const path of PAGES) await page.goto(path, { waitUntil: "networkidle" })
   expect(foreign).toEqual([])
+})
+
+test("giscus is the one third-party request, and only once the comments are scrolled to", async ({
+  page,
+}) => {
+  const foreign: string[] = []
+  await page.route("https://giscus.app/**", (route) => route.abort())
+  page.on("request", (request) => {
+    if (!request.url().startsWith("http://127.0.0.1")) foreign.push(request.url())
+  })
+  await page.goto("/zh/linear-algebra/02/", { waitUntil: "networkidle" })
+  expect(foreign).toEqual([])
+  await page.locator(".comments").scrollIntoViewIfNeeded()
+  await expect.poll(() => foreign).toEqual(["https://giscus.app/client.js"])
 })
 
 test("unknown paths get the bilingual 404 page", async ({ page }) => {

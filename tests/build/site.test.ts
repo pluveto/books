@@ -149,6 +149,24 @@ test("the language switch keeps the chapter", () => {
   assert.equal(attribute(link, "href"), "/books/en/calculus/02/")
 })
 
+test("only chapters carry a comment thread, keyed independently of where the site is served", () => {
+  const mounts = new Map(
+    site.pages.flatMap((page) => {
+      const [mount] = BuiltSite.elements(page.tree, (node) => attribute(node, "dataComments") === "true")
+      return mount ? [[page.pathname, mount] as const] : []
+    }),
+  )
+  assert.deepEqual(
+    [...mounts.keys()].sort(),
+    site.pages.map((page) => page.pathname).filter((pathname) => /\/\d\d\/$/.test(pathname)),
+  )
+  const mount = mounts.get("/books/zh/calculus/02/")
+  assert.ok(mount)
+  assert.equal(attribute(mount, "dataCommentsTerm"), "zh/calculus/02")
+  assert.equal(attribute(mount, "dataCommentsLang"), "zh-CN")
+  assert.equal(attribute(mount, "dataCommentsRepo"), "pluveto/xyzw")
+})
+
 test("formulas and code are finished at build time", () => {
   for (const page of site.pages) {
     const html = fs.readFileSync(path.join(site.root, page.file), "utf8")

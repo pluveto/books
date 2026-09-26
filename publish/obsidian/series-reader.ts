@@ -8,7 +8,7 @@ import { Edition, type EditionText } from "../model/edition.ts"
 import { isLanguage, LANGUAGES, type LanguageCode, type Languages } from "../model/language.ts"
 import { MacroError, MacroSet } from "../model/macro-set.ts"
 import { Outline } from "../model/outline.ts"
-import { Series, type License, type SeriesText } from "../model/series.ts"
+import { Series, type Comments, type License, type SeriesText } from "../model/series.ts"
 import type { Frontmatter, Vault } from "./vault.ts"
 
 /** Turns a note body into a Markdown AST; the render layer supplies Quartz's parser. */
@@ -20,6 +20,7 @@ const SERIES_FILE = "series.md"
 const BOOK_FILE = "book.md"
 const CHAPTER_FILE = /^(\d{2})-.+\.md$/
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const REPO = /^[\w.-]+\/[\w.-]+$/
 const IMAGE = /\.(svg|png|jpe?g|webp|avif)$/i
 const DEFAULT_BRAND = "#7e2d36"
 
@@ -35,8 +36,10 @@ const KEYS = {
     "license_url",
     "code_license",
     "code_license_url",
+    "comments",
     ...LANGUAGES,
   ],
+  comments: ["repo", "repo_id", "category", "category_id"],
   seriesText: ["title", "tagline", "author"],
   book: ["color", "cover", "status", "macros", ...LANGUAGES],
   bookText: ["title", "subtitle", "description"],
@@ -81,6 +84,7 @@ export class SeriesReader {
       brand: this.accent(meta, DEFAULT_BRAND),
       textLicense: this.license(meta, "license"),
       codeLicense: this.license(meta, "code_license"),
+      comments: this.comments(meta),
     }
     return new Series(SERIES_FILE, settings, languages, texts, (series) =>
       slugs.map((slug) => ({ book: this.book(series, slug), file: `${slug}/${BOOK_FILE}` })),
@@ -137,6 +141,20 @@ export class SeriesReader {
       throw meta.error(`"${key}" must be an http(s) URL`, key)
     }
     return value.replace(/\/+$/, "")
+  }
+
+  private comments(meta: Frontmatter): Comments | undefined {
+    const section = meta.section("comments")
+    if (!section) return undefined
+    section.allowOnly(KEYS.comments)
+    const repo = section.string("repo")
+    if (!REPO.test(repo)) throw section.error(`"repo" must look like "owner/name", got "${repo}"`, "repo")
+    return {
+      repo,
+      repoId: section.string("repo_id"),
+      category: section.string("category"),
+      categoryId: section.string("category_id"),
+    }
   }
 
   private license(meta: Frontmatter, key: string): License {
