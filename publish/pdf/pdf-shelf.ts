@@ -35,7 +35,9 @@ export class PdfShelf {
   /** An unreadable manifest counts as an empty shelf: no PDF is linked until rebuilt. */
   static open(folder: string): PdfShelf {
     const entries = new Map<string, Entry>()
-    for (const [name, { file, fingerprint }] of Object.entries(PdfShelf.readManifest(folder))) {
+    for (const [name, entry] of Object.entries(PdfShelf.readManifest(folder))) {
+      if (!entry || typeof entry !== "object") continue
+      const { file, fingerprint } = entry
       if (
         typeof file === "string" &&
         typeof fingerprint === "string" &&
@@ -91,13 +93,13 @@ export class PdfShelf {
     fs.renameSync(`${manifest}.tmp`, manifest)
   }
 
-  private static readManifest(folder: string): Record<string, Partial<Entry>> {
+  private static readManifest(folder: string): Record<string, Partial<Entry> | null> {
     const manifest = path.join(folder, PdfShelf.MANIFEST)
     if (!fs.existsSync(manifest)) return {}
     try {
       const data: unknown = JSON.parse(fs.readFileSync(manifest, "utf8"))
       return data && typeof data === "object" && !Array.isArray(data)
-        ? (data as Record<string, Partial<Entry>>)
+        ? (data as Record<string, Partial<Entry> | null>)
         : {}
     } catch {
       return {}

@@ -31,4 +31,7 @@ test("a damaged manifest is an empty shelf, and saving replaces it whole", () =>
   shelf.save()
   assert.deepEqual(fs.readdirSync(folder).sort(), ["a.pdf", PdfShelf.MANIFEST])
   assert.deepEqual([...PdfShelf.open(folder).current(["a.pdf"], "x")], ["a.pdf"])
+
+  fs.writeFileSync(path.join(folder, PdfShelf.MANIFEST), '{"a.pdf": null, "b.pdf": 3}')
+  assert.deepEqual([...PdfShelf.open(folder).current(["a.pdf", "b.pdf"], "x")], [])
 })
