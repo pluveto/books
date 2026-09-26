@@ -41,6 +41,10 @@ updates:
       # @types/node tracks the runtime in "engines", so a major bump is a deliberate move.
       - dependency-name: "@types/node"
         update-types: [version-update:semver-major]
+      # typescript-eslint 8 peers on typescript <6.1, so 7.x fails npm ci.
+      # Drop this once that peer range includes 7.
+      - dependency-name: "typescript"
+        versions: ["7.x"]
 
   - package-ecosystem: github-actions
     directory: /
