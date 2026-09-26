@@ -11,21 +11,21 @@ Thanks for helping. Book content changes only touch `vault/`; the README explain
 
 ## How the publisher is organised
 
-Each folder under `publish/` is one context with one job, and depends only on the ones above it in this list:
+Each folder under `publish/` is one context with one job. It depends only on the ones above it in this list, except that `site/` and `pdf/` are siblings that never import each other; the shared kernel (`i18n.ts`, `errors.ts`, `routes.ts`, `protocol.ts`) may be used by all and depends on `model/` at most. `tests/unit/layers.test.ts` enforces this.
 
-| Folder      | Responsibility                                                                                                                                                                                                                             |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `model/`    | The domain: `Series` (aggregate root) → `Book` → `Edition` (a book in one language) → `Chapter`, plus value objects `Outline`, `MacroSet`, `AccentColor`. No I/O.                                                                          |
-| `obsidian/` | Reading the vault: `Vault` (files and frontmatter), `FileIndex` (Obsidian's link resolution), `SeriesReader` (builds and validates the model; parsing is injected as a `NoteParser`), `ObsidianPreamble` (macros for Obsidian's preview).  |
-| `render/`   | Markdown AST → HTML through Quartz's transformer plugins. `ChapterRenderer` is the only entry point; link targets come in through the `LinkTarget` interface, so the same trees render for the web and for the PDF.                        |
-| `site/`     | Pages, routes, assets, media, sitemap and search. Each page is an object implementing `Page`; `Site` renders everything into a staging folder and only then replaces the output, which it must have created itself (`.books-site` marker). |
-| `pdf/`      | One `PdfBook` per edition: the same chapter trees rendered with PDF link targets and handed to Pandoc.                                                                                                                                     |
-| `dev/`      | The preview server used by `npm run dev` and `npm run serve`.                                                                                                                                                                              |
+| Folder      | Responsibility                                                                                                                                                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model/`    | The domain: `Series` (aggregate root) → `Book` → `Edition` (a book in one language) → `Chapter`, plus value objects `Outline`, `MacroSet`, `AccentColor`. No I/O.                                                                         |
+| `obsidian/` | Reading the vault: `Vault` (files and frontmatter), `FileIndex` (Obsidian's link resolution), `SeriesReader` (builds and validates the model; parsing is injected as a `NoteParser`), `ObsidianPreamble` (macros for Obsidian's preview). |
+| `render/`   | Markdown AST → HTML through Quartz's transformer plugins. `ChapterRenderer` is the only entry point; link targets come in through the `LinkTarget` interface, so the same trees render for the web and for the PDF.                       |
+| `site/`     | Pages, assets, media, sitemap and search. Each page is an object implementing `Page`; `Site` renders everything into a staging folder and only then replaces the output, which it must have created itself (`.books-site` marker).        |
+| `pdf/`      | One `PdfBook` per edition: the same chapter trees rendered with PDF link targets and handed to Pandoc; `PdfShelf` records built PDFs with a fingerprint of their inputs.                                                                  |
+| `dev/`      | The preview server used by `npm run dev` and `npm run serve`.                                                                                                                                                                             |
 
 Rules that keep it that way:
 
 - Heading slugs are computed only in `Outline`; the web id of a heading is defined only by `Routes.headingId`, the PDF id only by `PdfLinks.headingId`.
-- Names shared by the build, the preview server and the browser (output folders, storage keys, the reload endpoint) live only in `site/protocol.ts`.
+- The URL scheme lives only in `routes.ts`; names shared by the build, the preview server and the browser (output folders, storage keys, the reload endpoint) live only in `protocol.ts`.
 - Domain rules live in `model/`: for example `Chapter.translation` says that chapters with the same number are translations.
 - Author-facing problems are `PublishError`s with a `SourceLocation`; anything else is a bug and should crash loudly.
 - Quartz plugins are used through their published `QuartzTransformerPluginInstance` interface. `render/quartz.ts` is the only file that knows which plugins exist.
