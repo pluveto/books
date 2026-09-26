@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+      prefix-development: "build"
+    groups:
+      # The Quartz plugins, the renderers and the toolchain each move together; one PR
+      # per group keeps a version bump reviewable against a single CI run.
+      publishing:
+        patterns:
+          - "@quartz-community/*"
+          - "@myriaddreamin/*"
+          - "remark*"
+          - "rehype*"
+          - "unified"
+          - "unist-util-*"
+          - "hast-util-*"
+          - "mdast-util-*"
+      toolchain:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "eslint"
+          - "@eslint/*"
+          - "prettier"
+          - "tsx"
+          - "esbuild"
+      browser-tests:
+        patterns:
+          - "@playwright/*"
+          - "@axe-core/*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"

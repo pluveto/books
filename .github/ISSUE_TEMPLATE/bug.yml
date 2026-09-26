@@ -1,0 +1,40 @@
+name: Problem with the site or the build / 站点或构建的问题
+description: A broken page, a layout bug, a failing build or PDF.
+title: "fix: "
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / 发生了什么
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected / 期望的行为
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce / 复现步骤
+      description: A URL, or the commands you ran. Paste the error in full.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: Browser, or operating system and `node -v`. Skip for a problem you saw on the live site.
+      placeholder: Windows 11, Node 22.12, Firefox 141
+    validations:
+      required: false
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before filing / 提交前
+      options:
+        - label: For a build problem, `npm ci && npm run check && npm test` reproduces it on a clean checkout.
+          required: false

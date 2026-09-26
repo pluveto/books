@@ -1,0 +1,27 @@
+name: Mistake in a book / 书里的错误
+description: A wrong formula, a wrong statement, a typo, a bad figure.
+title: "content: "
+labels: [content]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page / 页面
+      description: The URL of the chapter, or the file under vault/.
+      placeholder: https://xyzw.space/zh/linear-algebra/01/
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What is wrong / 错在哪里
+      description: Quote the sentence or formula so it can be found.
+    validations:
+      required: true
+  - type: textarea
+    id: right
+    attributes:
+      label: What it should say / 应该是什么
+      description: A correction, and a source if you have one.
+    validations:
+      required: false

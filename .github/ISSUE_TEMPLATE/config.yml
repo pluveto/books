@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask about the books / 讨论书的内容
+    url: https://github.com/pluveto/xyzw/discussions
+    about: Questions about the maths or a chapter belong in Discussions, or in the comment thread at the bottom of that chapter.
+  - name: Chapter comments / 章节评论
+    url: https://xyzw.space
+    about: Every chapter page has a comment thread; that is the best place for a remark about one passage.
