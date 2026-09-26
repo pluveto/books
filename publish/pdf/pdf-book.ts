@@ -14,7 +14,7 @@ import { FileIndex } from "../obsidian/file-index.ts"
 import type { Vault } from "../obsidian/vault.ts"
 import { ChapterRenderer } from "../render/renderer.ts"
 import type { LinkTarget } from "../render/scope.ts"
-import type { Routes } from "../site/routes.ts"
+import type { Routes } from "../routes.ts"
 import { MONO_FONT, typesetting } from "./typesetting.ts"
 
 const FILTER = path.join(path.dirname(fileURLToPath(import.meta.url)), "obsidian.lua")

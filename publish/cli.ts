@@ -12,8 +12,8 @@ import { Vault } from "./obsidian/vault.ts"
 import { PdfBook } from "./pdf/pdf-book.ts"
 import { MarkdownParser } from "./render/parser.ts"
 import { PdfShelf } from "./pdf/pdf-shelf.ts"
-import { OUTPUT } from "./site/protocol.ts"
-import { Routes } from "./site/routes.ts"
+import { OUTPUT } from "./protocol.ts"
+import { Routes } from "./routes.ts"
 import { Site } from "./site/site.ts"
 
 const USAGE = `Usage: npm run <command> -- [options]

@@ -1,4 +1,4 @@
-import { STORAGE } from "../protocol.ts"
+import { STORAGE } from "../../protocol.ts"
 import { storage } from "./storage.ts"
 
 type Theme = "light" | "dark"

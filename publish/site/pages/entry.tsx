@@ -2,7 +2,7 @@ import type { LanguageCode } from "../../model/language.ts"
 import { BrandMark, SearchDialog, SiteFooter, SiteHeader } from "../components/chrome.tsx"
 import { messages } from "../../i18n.ts"
 import type { Page, PageHead, SiteContext } from "../page.ts"
-import { STORAGE } from "../protocol.ts"
+import { STORAGE } from "../../protocol.ts"
 
 /**
  * The site root. With JavaScript it forwards to the reader's language (a saved choice

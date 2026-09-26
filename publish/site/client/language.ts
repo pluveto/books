@@ -1,4 +1,4 @@
-import { STORAGE } from "../protocol.ts"
+import { STORAGE } from "../../protocol.ts"
 import { storage } from "./storage.ts"
 
 /** A language chosen by hand wins over the browser's preference on the next visit. */

@@ -4,7 +4,7 @@ import type { LanguageCode } from "../model/language.ts"
 import type { Heading } from "../model/outline.ts"
 import type { LinkTarget } from "../render/scope.ts"
 import type { MediaLibrary } from "./media.ts"
-import type { Routes } from "./routes.ts"
+import type { Routes } from "../routes.ts"
 
 export class WebLinks implements LinkTarget {
   constructor(

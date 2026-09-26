@@ -2,7 +2,7 @@ import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import type { Vault } from "../obsidian/vault.ts"
-import type { Routes } from "./routes.ts"
+import type { Routes } from "../routes.ts"
 
 /** The vault files a build publishes, each under a content-hashed folder. */
 export class MediaLibrary {

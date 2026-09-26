@@ -5,7 +5,7 @@ import type { Series } from "../model/series.ts"
 import type { SiteAssets } from "./assets.ts"
 import type { SourceHistory } from "./history.ts"
 import type { MediaLibrary } from "./media.ts"
-import type { Routes } from "./routes.ts"
+import type { Routes } from "../routes.ts"
 
 export interface PageHead {
   readonly title: string

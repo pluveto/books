@@ -1,6 +1,6 @@
 import { messages } from "../i18n.ts"
 import type { Page } from "./page.ts"
-import type { Routes } from "./routes.ts"
+import type { Routes } from "../routes.ts"
 
 function escape(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")

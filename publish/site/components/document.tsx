@@ -2,7 +2,7 @@ import { renderToString } from "preact-render-to-string"
 import { AccentColor } from "../../model/accent.ts"
 import { messages } from "../../i18n.ts"
 import type { Page, SiteContext } from "../page.ts"
-import { RELOAD_PATH, STORAGE } from "../protocol.ts"
+import { RELOAD_PATH, STORAGE } from "../../protocol.ts"
 
 /**
  * Runs before first paint so a saved theme never flashes the other one. The `js` class

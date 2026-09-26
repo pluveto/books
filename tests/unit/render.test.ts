@@ -4,7 +4,7 @@ import { PublishError } from "../../publish/errors.ts"
 import { FileIndex } from "../../publish/obsidian/file-index.ts"
 import { ChapterRenderer, type OutputKind } from "../../publish/render/renderer.ts"
 import { MediaLibrary } from "../../publish/site/media.ts"
-import { Routes } from "../../publish/site/routes.ts"
+import { Routes } from "../../publish/routes.ts"
 import { WebLinks } from "../../publish/site/web-links.ts"
 import { makeVault, readSeries } from "../support/fixture.ts"
 

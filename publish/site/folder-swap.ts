@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { PublishError } from "../errors.ts"
-import { OUTPUT } from "./protocol.ts"
+import { OUTPUT } from "../protocol.ts"
 
 type Rename = (from: string, to: string) => void
 

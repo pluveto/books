@@ -3,7 +3,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { build } from "esbuild"
-import type { Routes } from "./routes.ts"
+import type { Routes } from "../routes.ts"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 

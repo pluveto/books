@@ -7,7 +7,7 @@ import { SeriesReader } from "../../publish/obsidian/series-reader.ts"
 import { Vault } from "../../publish/obsidian/vault.ts"
 import { PdfBook } from "../../publish/pdf/pdf-book.ts"
 import { MarkdownParser } from "../../publish/render/parser.ts"
-import { Routes } from "../../publish/site/routes.ts"
+import { Routes } from "../../publish/routes.ts"
 import { makeVault, readSeries, tempDir } from "../support/fixture.ts"
 
 const VAULT = path.resolve(import.meta.dirname, "../../vault")

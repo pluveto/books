@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import * as pagefind from "pagefind"
-import { OUTPUT } from "./protocol.ts"
+import { OUTPUT } from "../protocol.ts"
 
 export interface IndexedPage {
   /** Path relative to the site's base path; the search UI prefixes the base itself. */

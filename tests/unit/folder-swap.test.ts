@@ -4,7 +4,7 @@ import path from "node:path"
 import test from "node:test"
 import { PublishError } from "../../publish/errors.ts"
 import { FolderSwap } from "../../publish/site/folder-swap.ts"
-import { OUTPUT } from "../../publish/site/protocol.ts"
+import { OUTPUT } from "../../publish/protocol.ts"
 import { tempDir } from "../support/fixture.ts"
 import { BuiltSite } from "../support/site-audit.ts"
 

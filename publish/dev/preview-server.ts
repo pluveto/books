@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import http from "node:http"
 import path from "node:path"
-import { RELOAD_PATH } from "../site/protocol.ts"
+import { RELOAD_PATH } from "../protocol.ts"
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

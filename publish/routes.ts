@@ -1,7 +1,7 @@
-import type { Chapter } from "../model/chapter.ts"
-import type { Edition } from "../model/edition.ts"
-import type { LanguageCode } from "../model/language.ts"
-import type { Heading } from "../model/outline.ts"
+import type { Chapter } from "./model/chapter.ts"
+import type { Edition } from "./model/edition.ts"
+import type { LanguageCode } from "./model/language.ts"
+import type { Heading } from "./model/outline.ts"
 import { OUTPUT } from "./protocol.ts"
 
 /**
