@@ -8,7 +8,7 @@ import { Vault } from "../../publish/obsidian/vault.ts"
 import { PdfBook } from "../../publish/pdf/pdf-book.ts"
 import { MarkdownParser } from "../../publish/render/parser.ts"
 import { Routes } from "../../publish/site/routes.ts"
-import { tempDir } from "../support/fixture.ts"
+import { makeVault, readSeries, tempDir } from "../support/fixture.ts"
 
 const VAULT = path.resolve(import.meta.dirname, "../../vault")
 /** CI sets this so a missing tool fails the job instead of skipping the check. */
@@ -109,5 +109,21 @@ test(
       if (/[\u2019\u2018](\(|a\))/.test(text)) problems.push(`${name}: a prime was set as a quotation mark`)
     }
     assert.deepEqual(problems, [])
+  },
+)
+
+test(
+  "a character the fonts cannot print fails the PDF build",
+  { skip: !REQUIRED && !fullChain && "needs pandoc, xelatex, rsvg-convert and pdftotext" },
+  async () => {
+    const root = makeVault({ "alpha/en/01-first.md": "# First\n\n```text\n中\n```\n" })
+    const { vault, series } = readSeries(root)
+    const edition = series.books[0]?.edition("en")
+    assert.ok(edition)
+    const pdf = new PdfBook(vault, series, edition, new Routes(series.settings.siteUrl))
+    await assert.rejects(
+      pdf.write(path.join(tempDir("books-glyph-"), "x.pdf")),
+      /fonts lack characters[\s\S]*Missing character/,
+    )
   },
 )
