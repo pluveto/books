@@ -1,12 +1,12 @@
-# Less Bug Books
+# XYZW Project
 
-[中文说明](README.zh-CN.md)
+[中文说明](README.zh-CN.md) · [xyzw.space](https://xyzw.space)
 
 A series of open textbooks, written in [Obsidian](https://obsidian.md) and published as one website with one design for every book. The first three books — _Linear Algebra_, _Calculus_ and _Probability and Statistics_ — are placeholders that exercise the whole pipeline in Chinese and English.
 
 - Formulas are typeset to SVG **at build time** with MathJax; pages never parse TeX in the browser.
 - Obsidian syntax (wikilinks, embeds, callouts, highlights, comments) is rendered by [Quartz](https://quartz.jzhao.xyz/)'s transformer plugins, without vendoring Quartz itself.
-- Code is highlighted at build time with Shiki, search is a static [Pagefind](https://pagefind.app/) index, and the site makes no requests to other origins.
+- Code is highlighted at build time with Shiki and search is a static [Pagefind](https://pagefind.app/) index. Reading a page requests nothing from any other origin; [giscus](https://giscus.app) is fetched only once a reader scrolls down to a chapter's comments.
 - The whole toolchain is TypeScript on Node.js; the same commands work on Windows, macOS and Ubuntu.
 
 ## Quick start
@@ -34,7 +34,7 @@ Open `vault/` as an Obsidian vault.
 
 ```text
 vault/
-  series.md                  site URL, languages, book order, licences, per-language title and tagline
+  series.md                  site URL, languages, book order, licences, comments, per-language title and tagline
   linear-algebra/            one folder per book; the folder name is the URL slug
     book.md                  colour, cover, status, TeX macros, per-language title/subtitle/description
     cover.svg
@@ -62,7 +62,18 @@ npm test          # unit tests and a full build audited for broken links, SEO ta
 npm run test:e2e  # Playwright + axe: WCAG 2.1 AA in light and dark mode, desktop and phone
 ```
 
-CI runs them on Ubuntu, Windows and macOS, builds and checks the PDFs on Ubuntu, and deploys `main` to GitHub Pages only when every job passes. See [docs/acceptance.md](docs/acceptance.md) for what "done" means and [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised.
+CI runs them on Ubuntu, Windows and macOS, builds and checks the PDFs on Ubuntu, and deploys `main` to [xyzw.space](https://xyzw.space) only when every job passes. See [docs/acceptance.md](docs/acceptance.md) for what "done" means and [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is organised.
+
+## Publishing
+
+The site is a [Cloudflare Workers](https://developers.cloudflare.com/workers/static-assets/) static-assets deployment described by `wrangler.jsonc`; Cloudflare serves the apex domain and issues its certificate. The `deploy` job needs two repository secrets:
+
+| Secret                  | What it is                                                    |
+| ----------------------- | ------------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | The account the Worker belongs to.                            |
+| `CLOUDFLARE_API_TOKEN`  | A token with _Workers Scripts: Edit_, scoped to that account. |
+
+Each chapter's comment thread is a GitHub Discussion in this repository, in the _Announcements_ category, addressed by a key such as `zh/calculus/02`. The key leaves out the site's base path on purpose, so moving the site never orphans a thread. Point `comments` in `vault/series.md` somewhere else, or delete it, to change or switch off comments.
 
 ## Credits
 

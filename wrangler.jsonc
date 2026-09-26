@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xyzw",
+  "compatibility_date": "2026-09-26",
+  // The site is fully static: no Worker script runs, the asset server answers every request.
+  "assets": {
+    "directory": "./dist",
+    // Directory URLs such as /zh/linear-algebra/ must keep their trailing slash.
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+  },
+  "routes": [
+    {
+      "pattern": "xyzw.space",
+      "custom_domain": true,
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+}

@@ -1,12 +1,12 @@
-# Less Bug 丛书
+# XYZW 丛书
 
-[English](README.md)
+[English](README.md) · [xyzw.space](https://xyzw.space)
 
 一套开放教材：在 [Obsidian](https://obsidian.md) 里写作，发布成同一套设计的网站。目前的三本书《线性代数》《微积分》《概率与统计》是占位书，用中英两种语言走通整条管线。
 
 - 公式在**构建时**由 MathJax 排成 SVG，浏览器不再解析 TeX。
 - Obsidian 语法（维基链接、嵌入、提示块、高亮、注释）由 [Quartz](https://quartz.jzhao.xyz/) 的转换插件渲染，但不把 Quartz 整站搬进仓库。
-- 代码在构建时由 Shiki 高亮；搜索是静态的 [Pagefind](https://pagefind.app/) 索引；站点不向任何外部域名发请求。
+- 代码在构建时由 Shiki 高亮；搜索是静态的 [Pagefind](https://pagefind.app/) 索引。阅读页面不向任何外部域名发请求；只有读者滚动到章节末尾的评论区时，才会去取 [giscus](https://giscus.app)。
 - 整条工具链都是 Node.js 上的 TypeScript，Windows、macOS、Ubuntu 用同样的命令。
 
 ## 快速开始
@@ -34,7 +34,7 @@ npm run pdf -- --book calculus --lang zh     # 只生成一本书的一个语言
 
 ```text
 vault/
-  series.md                  站点地址、语言、书目顺序、许可证，以及各语言的丛书名和简介
+  series.md                  站点地址、语言、书目顺序、许可证、评论配置，以及各语言的丛书名和简介
   linear-algebra/            一本书一个文件夹，文件夹名就是网址里的 slug
     book.md                  主题色、封面、状态、TeX 宏，以及各语言的书名、副标题、简介
     cover.svg
@@ -62,7 +62,18 @@ npm test          # 单元测试，以及一次完整构建的死链、SEO 标�
 npm run test:e2e  # Playwright + axe：亮色和深色、桌面和手机，都要达到 WCAG 2.1 AA
 ```
 
-CI 在 Ubuntu、Windows、macOS 上跑以上全部检查，在 Ubuntu 上构建并检查 PDF；只有全部任务通过，才会把 `main` 部署到 GitHub Pages。「做完」的定义见 [docs/acceptance.md](docs/acceptance.md)，代码结构见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+CI 在 Ubuntu、Windows、macOS 上跑以上全部检查，在 Ubuntu 上构建并检查 PDF；只有全部任务通过，才会把 `main` 部署到 [xyzw.space](https://xyzw.space)。「做完」的定义见 [docs/acceptance.md](docs/acceptance.md)，代码结构见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 发布
+
+站点是 [Cloudflare Workers](https://developers.cloudflare.com/workers/static-assets/) 的静态资源部署，配置在 `wrangler.jsonc`；根域名和证书都由 Cloudflare 负责。`deploy` 任务需要两个仓库 secret：
+
+| Secret                  | 含义                                            |
+| ----------------------- | ----------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | Worker 所属的账号。                             |
+| `CLOUDFLARE_API_TOKEN`  | 限定该账号、带 _Workers Scripts: Edit_ 的令牌。 |
+
+每章的评论是本仓库 _Announcements_ 分类下的一条 GitHub Discussion，用 `zh/calculus/02` 这样的键对应。这个键特意不含站点的基路径，所以换域名或换子路径都不会让已有的讨论串失联。改 `vault/series.md` 里的 `comments` 可以换一个仓库，删掉它就关闭评论。
 
 ## 致谢
 
