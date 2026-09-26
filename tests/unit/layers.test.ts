@@ -44,7 +44,8 @@ test("every import follows the layering in CONTRIBUTING.md", () => {
     const from = part(file)
     const allowed = ALLOWED[from]
     assert.ok(allowed, `${path.relative(PUBLISH, file)} belongs to no known part`)
-    for (const match of fs.readFileSync(file, "utf8").matchAll(/from "(\.{1,2}\/[^"]+)"/g)) {
+    const specifiers = /(?:from\s+|import\s*\(\s*|import\s+)"(\.{1,2}\/[^"]+)"/g
+    for (const match of fs.readFileSync(file, "utf8").matchAll(specifiers)) {
       const target = part(path.resolve(path.dirname(file), match[1] ?? ""))
       if (!allowed.includes(target))
         violations.push(`${path.relative(PUBLISH, file)} (${from}) imports ${match[1]} (${target})`)
