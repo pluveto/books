@@ -3,7 +3,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { afterEach, beforeEach, test } from "node:test"
 import { PublishCommand } from "../../publish/cli.ts"
-import { PdfShelf } from "../../publish/site/pdf-shelf.ts"
+import { PdfShelf } from "../../publish/pdf/pdf-shelf.ts"
 import { Site } from "../../publish/site/site.ts"
 import { BOOK_MD, makeVault, readSeries, tempDir } from "../support/fixture.ts"
 import { BuiltSite } from "../support/site-audit.ts"
@@ -65,31 +65,39 @@ test("a failure after rendering leaves the previous site byte-for-byte", async (
   assert.equal(fs.existsSync(path.join(path.dirname(out), `.${path.basename(out)}.staging`)), false)
 })
 
-test("cover pages link a PDF only while it matches the edition's sources", async () => {
+test("cover pages link a PDF only while every input it was built from is unchanged", async () => {
+  const siteUrl = new URL("https://books.example.org/")
+  const cover = (out: string) => fs.readFileSync(path.join(out, "zh", "alpha", "index.html"), "utf8")
+  const shelve = (root: string) => {
+    const out = tempDir("books-shelf-")
+    const shelf = PdfShelf.open(path.join(out, "pdf"))
+    fs.mkdirSync(path.join(out, "pdf"), { recursive: true })
+    for (const name of ["alpha.zh.pdf", "gone.zh.pdf"]) fs.writeFileSync(path.join(out, "pdf", name), "%PDF")
+    shelf.record("alpha.zh.pdf", "alpha.zh.pdf", PdfShelf.fingerprint(readSeries(root).vault, siteUrl))
+    shelf.record("gone.zh.pdf", "gone.zh.pdf", "stale")
+    shelf.prune(new Set(["alpha.zh.pdf"]))
+    shelf.save()
+    assert.equal(fs.existsSync(path.join(out, "pdf", "gone.zh.pdf")), false)
+    return out
+  }
+  const build = (root: string, out: string, ...extra: string[]) =>
+    PublishCommand.run(["build", "--vault", root, "--out", out, "--no-search", ...extra])
+
   const root = makeVault()
-  const out = tempDir("books-shelf-")
-  const { vault, series } = readSeries(root)
-  const edition = series.books[0]?.edition("zh")
-  assert.ok(edition)
-  const shelf = PdfShelf.open(path.join(out, "pdf"))
-  fs.mkdirSync(path.join(out, "pdf"), { recursive: true })
-  fs.writeFileSync(path.join(out, "pdf", "alpha.zh.pdf"), "%PDF")
-  fs.writeFileSync(path.join(out, "pdf", "gone.zh.pdf"), "%PDF")
-  shelf.record("alpha.zh.pdf", "alpha.zh.pdf", PdfShelf.fingerprint(vault, edition))
-  shelf.record("gone.zh.pdf", "gone.zh.pdf", "stale")
-  shelf.prune(new Set(["alpha.zh.pdf"]))
-  shelf.save()
-  assert.equal(fs.existsSync(path.join(out, "pdf", "gone.zh.pdf")), false)
+  const current = shelve(root)
+  assert.equal(await build(root, current), 0)
+  assert.match(cover(current), /href="\/pdf\/alpha\.zh\.pdf"/)
+  assert.ok(fs.existsSync(path.join(current, "pdf", "alpha.zh.pdf")), "the build keeps the PDF")
 
-  const cover = () => fs.readFileSync(path.join(out, "zh", "alpha", "index.html"), "utf8")
-  await new Site(vault, series, { out, search: false }).build()
-  assert.match(cover(), /href="\/pdf\/alpha\.zh\.pdf"/)
-  assert.ok(fs.existsSync(path.join(out, "pdf", "alpha.zh.pdf")), "the build keeps the PDF")
+  const otherEdition = shelve(root)
+  fs.appendFileSync(path.join(root, "alpha", "en", "01-first.md"), "\nA new paragraph.\n")
+  assert.equal(await build(root, otherEdition), 0)
+  assert.doesNotMatch(cover(otherEdition), /alpha\.zh\.pdf/, "any vault change makes the PDF stale")
 
-  fs.appendFileSync(path.join(root, "alpha", "zh", "01-第一章.md"), "\n新的一段。\n")
-  const changed = readSeries(root)
-  await new Site(changed.vault, changed.series, { out, search: false }).build()
-  assert.doesNotMatch(cover(), /alpha\.zh\.pdf/, "a PDF built from older sources is not linked")
+  const moved = makeVault()
+  const elsewhere = shelve(moved)
+  assert.equal(await build(moved, elsewhere, "--site-url", "https://mirror.example.org/"), 0)
+  assert.doesNotMatch(cover(elsewhere), /alpha\.zh\.pdf/, "a PDF linking to another site URL is stale")
 })
 
 test("usage errors exit 64", async () => {

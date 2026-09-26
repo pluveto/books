@@ -15,7 +15,6 @@ import { CatalogPage } from "./pages/catalog.tsx"
 import { ChapterPage } from "./pages/chapter.tsx"
 import { CoverPage } from "./pages/cover.tsx"
 import { GatePage, NotFoundPage } from "./pages/entry.tsx"
-import { PdfShelf } from "./pdf-shelf.ts"
 import { OUTPUT } from "./protocol.ts"
 import { Routes } from "./routes.ts"
 import { writeSearchIndex, type IndexedPage } from "./search.ts"
@@ -28,6 +27,8 @@ export interface SiteOptions {
   readonly siteUrl?: URL
   /** Builds the search index into a finished site folder; `false` skips search. */
   readonly search?: ((folder: string, pages: readonly IndexedPage[]) => Promise<void>) | false
+  /** File names under pdf/ that are current and may be linked; the PDF build decides. */
+  readonly pdfs?: ReadonlySet<string>
   readonly liveReload?: boolean
 }
 
@@ -58,7 +59,7 @@ export class Site {
       await SiteAssets.build(routes),
       media,
       SourceHistory.read(this.vault),
-      this.currentPdfs(out, routes),
+      this.options.pdfs ?? new Set(),
       this.options.liveReload ?? false,
     )
 
@@ -112,18 +113,6 @@ export class Site {
       }
     }
     return pages
-  }
-
-  /** PDFs whose recorded fingerprint still matches their edition's sources. */
-  private currentPdfs(out: string, routes: Routes): Set<string> {
-    const shelf = PdfShelf.open(path.join(out, OUTPUT.pdf))
-    const names = this.series.books
-      .flatMap((book) => book.editions)
-      .filter((edition) =>
-        shelf.isCurrent(routes.pdfName(edition), PdfShelf.fingerprint(this.vault, edition)),
-      )
-      .map((edition) => routes.pdfName(edition))
-    return new Set(names)
   }
 
   /** Only a folder this publisher made (or an empty one, or one holding only PDFs) may be replaced. */

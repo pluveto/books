@@ -11,7 +11,7 @@ import { SeriesReader } from "./obsidian/series-reader.ts"
 import { Vault } from "./obsidian/vault.ts"
 import { PdfBook } from "./pdf/pdf-book.ts"
 import { MarkdownParser } from "./render/parser.ts"
-import { PdfShelf } from "./site/pdf-shelf.ts"
+import { PdfShelf } from "./pdf/pdf-shelf.ts"
 import { OUTPUT } from "./site/protocol.ts"
 import { Routes } from "./site/routes.ts"
 import { Site } from "./site/site.ts"
@@ -148,10 +148,18 @@ export class PublishCommand {
   private async build(options: Options, liveReload: boolean): Promise<void> {
     const started = performance.now()
     const { vault, series } = this.read()
+    const siteUrl = options.siteUrl ?? series.settings.siteUrl
+    const routes = new Routes(siteUrl)
+    const names = series.books.flatMap((book) => book.editions).map((edition) => routes.pdfName(edition))
+    const pdfs = PdfShelf.open(path.join(options.out, OUTPUT.pdf)).current(
+      names,
+      PdfShelf.fingerprint(vault, siteUrl),
+    )
     const report = await new Site(vault, series, {
       out: options.out,
-      siteUrl: options.siteUrl,
+      siteUrl,
       search: options.search ? undefined : false,
+      pdfs,
       liveReload,
     }).build()
     const seconds = ((performance.now() - started) / 1000).toFixed(1)
@@ -212,13 +220,15 @@ export class PublishCommand {
       .filter((edition) => !language || edition.language === language)
     if (!editions.length)
       throw new PublishError(`No edition matches --book ${book ?? "*"} --lang ${language ?? "*"}.`)
-    const routes = new Routes(this.options.siteUrl ?? series.settings.siteUrl)
+    const siteUrl = this.options.siteUrl ?? series.settings.siteUrl
+    const routes = new Routes(siteUrl)
     const folder = path.join(this.options.out, OUTPUT.pdf)
     const shelf = PdfShelf.open(folder)
+    const fingerprint = PdfShelf.fingerprint(vault, siteUrl)
     for (const edition of editions) {
       const name = routes.pdfName(edition)
       await new PdfBook(vault, series, edition, routes).write(path.join(folder, name))
-      shelf.record(name, name, PdfShelf.fingerprint(vault, edition))
+      shelf.record(name, name, fingerprint)
       console.log(`Wrote ${path.relative(process.cwd(), path.join(folder, name))}`)
     }
     const existing = new Set(
