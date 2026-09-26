@@ -56,7 +56,11 @@ export class CoverPage implements Page {
           <Sidebar edition={edition} site={this.site} />
           <div class="sidebar-backdrop" data-sidebar-close hidden />
           <main id="content" class="content">
-            <article class="book-overview" data-pagefind-body data-pagefind-filter={`book:${edition.title}`}>
+            <article
+              class="book-overview"
+              data-pagefind-body
+              data-pagefind-filter={`${text.searchBookFilter}:${edition.title}`}
+            >
               <div class="book-hero">
                 <Cover edition={edition} site={this.site} size="hero" />
                 <div class="book-hero-text">

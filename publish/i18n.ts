@@ -13,6 +13,8 @@ export interface Messages {
   readonly searchShortcut: string
   readonly closeSearch: string
   readonly searchUnavailable: string
+  /** Name of the search filter that narrows results to one book. */
+  readonly searchBookFilter: string
   readonly toggleTheme: string
   readonly switchLanguage: string
   readonly sourceCode: string
@@ -54,6 +56,7 @@ const zh: Messages = {
   searchShortcut: "按 / 搜索",
   closeSearch: "关闭搜索",
   searchUnavailable: "搜索索引没有加载成功。",
+  searchBookFilter: "书",
   toggleTheme: "切换深色模式",
   switchLanguage: "切换语言",
   sourceCode: "源代码",
@@ -111,6 +114,7 @@ const en: Messages = {
   searchShortcut: "Press / to search",
   closeSearch: "Close search",
   searchUnavailable: "The search index could not be loaded.",
+  searchBookFilter: "Book",
   toggleTheme: "Toggle dark mode",
   switchLanguage: "Switch language",
   sourceCode: "Source",

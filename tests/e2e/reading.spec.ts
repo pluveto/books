@@ -44,6 +44,8 @@ test("search finds chapters in the page's language", async ({ page }) => {
     await expect(input).toBeFocused()
     await input.fill(query)
     await expect(page.locator(".pagefind-ui__result-link").first()).toContainText(expected)
+    const filter = path === "/zh/" ? "书" : "Book"
+    await expect(page.locator(".pagefind-ui__filter-name").first()).toHaveText(filter)
     await page.keyboard.press("Escape")
     await expect(page.locator("[data-search-dialog]")).not.toBeVisible()
   }

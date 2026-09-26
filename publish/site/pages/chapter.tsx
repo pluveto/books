@@ -65,7 +65,11 @@ export class ChapterPage implements Page {
           <Sidebar edition={edition} current={chapter} site={site} />
           <div class="sidebar-backdrop" data-sidebar-close hidden />
           <main id="content" class="content">
-            <article class="chapter" data-pagefind-body data-pagefind-filter={`book:${edition.title}`}>
+            <article
+              class="chapter"
+              data-pagefind-body
+              data-pagefind-filter={`${text.searchBookFilter}:${edition.title}`}
+            >
               <header class="chapter-header">
                 <p class="chapter-kicker">{chapterLabel(chapter)}</p>
                 <h1 id={chapter.outline.title && site.routes.headingId(chapter.outline.title)}>
