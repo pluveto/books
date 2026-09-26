@@ -73,8 +73,13 @@ export class FolderSwap {
     }
   }
 
-  /** Brings kept folders back to the output if an earlier run died after moving them. */
+  /**
+   * Repairs what a run killed mid-swap left behind: the previous output back in place if
+   * the new one never arrived, then kept folders stranded in staging back into it.
+   */
   recover(out: string, staging: string, keep: readonly string[]) {
+    const previous = FolderSwap.scratch(out, "previous")
+    if (!fs.existsSync(out) && fs.existsSync(path.join(previous, OUTPUT.marker))) this.rename(previous, out)
     for (const name of keep) {
       const stranded = path.join(staging, name)
       if (fs.existsSync(stranded) && !fs.existsSync(path.join(out, name))) {

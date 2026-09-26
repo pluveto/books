@@ -57,6 +57,20 @@ test("a failing rename at any step leaves the old site exactly as it was", () =>
   }
 })
 
+test("a run killed mid-swap is repaired before the next build touches anything", () => {
+  const afterCarry = setup()
+  fs.renameSync(path.join(afterCarry.out, "pdf"), path.join(afterCarry.staging, "pdf"))
+  new FolderSwap().recover(afterCarry.out, afterCarry.staging, [OUTPUT.pdf])
+  assert.deepEqual(tree(afterCarry.out), { [OUTPUT.marker]: "", "index.html": "old", "pdf/a.pdf": "pdf" })
+
+  const afterRetire = setup()
+  fs.renameSync(path.join(afterRetire.out, "pdf"), path.join(afterRetire.staging, "pdf"))
+  fs.renameSync(afterRetire.out, FolderSwap.scratch(afterRetire.out, "previous"))
+  new FolderSwap().recover(afterRetire.out, afterRetire.staging, [OUTPUT.pdf])
+  assert.deepEqual(tree(afterRetire.out), { [OUTPUT.marker]: "", "index.html": "old", "pdf/a.pdf": "pdf" })
+  assert.equal(fs.existsSync(FolderSwap.scratch(afterRetire.out, "previous")), false)
+})
+
 test("scratch folders are deleted only when this publisher made them", () => {
   const parent = tempDir("books-scratch-")
   const foreign = path.join(parent, "foreign")
