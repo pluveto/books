@@ -31,4 +31,4 @@ Rules that keep it that way:
 - Quartz plugins are used through their published `QuartzTransformerPluginInstance` interface. `render/quartz.ts` is the only file that knows which plugins exist.
 - User-visible strings live in `publish/i18n.ts` and XeLaTeX settings per language in `pdf/typesetting.ts`; adding a language means one code in `model/language.ts`, one `Messages` object and one `Typesetting` entry (the compiler lists what is missing).
 - Browser code is TypeScript in `site/client/`, bundled by esbuild at build time. It must enhance, not create, the page: everything works without JavaScript except search, theme switching and folding, and a bundle that fails to load leaves the page in its no-script form.
-- PDFs are built by `npm run pdf` and listed with source fingerprints in `pdf/manifest.json`; the site links only PDFs that are current.
+- PDFs are built by `npm run pdf` and listed with an input fingerprint in `pdf/manifest.json` by `pdf/PdfShelf`; the CLI asks the shelf which PDFs are current and hands that set to `Site`, which never reads the manifest.

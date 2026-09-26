@@ -26,7 +26,7 @@ npm run pdf                                  # 所有版本，输出到 dist/pdf
 npm run pdf -- --book calculus --lang zh     # 只生成一本书的一个语言版本
 ```
 
-之后再运行 `npm run build` 会保留 `dist/pdf/`，并在书的封面页放上下载链接。缺少工具或字体时，命令以退出码 2 结束并指出缺的是什么。构建只会替换它自己生成的输出目录。
+之后再运行 `npm run build` 会保留 `dist/pdf/`，并在书的封面页放上下载链接——前提是生成 PDF 所依据的内容（vault 里任何文件、发布器的 PDF 代码、站点地址）此后都没变；变了就重新运行 `npm run pdf`。缺少工具时，命令以退出码 2 结束并指出缺什么；装有 fontconfig 的系统上，缺字体也是如此（其他系统由 XeLaTeX 报错）。构建只会替换它自己生成的输出目录。
 
 ## 写作
 

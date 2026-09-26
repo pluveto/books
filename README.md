@@ -26,7 +26,7 @@ npm run pdf                                  # every edition, into dist/pdf/
 npm run pdf -- --book calculus --lang en     # one edition
 ```
 
-A later `npm run build` keeps `dist/pdf/` and links the PDFs from each book's page. When a tool or the font is missing, the command exits with code 2 and names it. The build only ever replaces an output folder it created itself.
+A later `npm run build` keeps `dist/pdf/` and links each book's PDF from its cover page, as long as nothing the PDFs were built from has changed since (any vault file, the publisher's PDF code or the site URL); otherwise run `npm run pdf` again. A missing tool makes the command exit with code 2 and name it; so does a missing font on systems with fontconfig (elsewhere XeLaTeX reports it). The build only ever replaces an output folder it created itself.
 
 ## Writing
 
